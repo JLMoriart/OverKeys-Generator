@@ -483,11 +483,20 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         }
 
         pw.println("translate([0,metalRoundRadius*2+4,0])");
-
+        
         if (isWhiteKey(currentPianoKey)) {//main section, white key is taller
             pw.println("cube([underKeyWidth,length-(metalRoundRadius*2+4),blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4],false);");
         } else {
             pw.println("cube([underKeyWidth,length-(metalRoundRadius*2+4),metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4],false);");
+
+        }
+        
+        pw.println("translate([0.5*underKeyWidth,length,0])");
+        
+        if (isWhiteKey(currentPianoKey)) {//main section, white key is taller
+            pw.println("cylinder(h=blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4, r=underKeyWidth/6);");
+        } else {
+            pw.println("cylinder(h=metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4, r=underKeyWidth/6);");
 
         }
 
@@ -531,14 +540,14 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         
         if (isWhiteKey(currentPianoKey)) {
             pw.println("warpHeight=" + (blackKeyHeight + metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4) +";");
-            warpCuts(blackKeyHeight + metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 1, true);
+            //warpCuts(blackKeyHeight + metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 1, true);
             warpCuts(blackKeyHeight + metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 2, true);
-            warpCuts(blackKeyHeight + metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 3, true);
+            //warpCuts(blackKeyHeight + metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 3, true);
         } else {
             pw.println("warpHeight=" + (metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4) +";");
-            warpCuts(metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 1, false);
+            //warpCuts(metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 1, false);
             warpCuts(metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 2, false);
-            warpCuts(metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 3, false);
+            //warpCuts(metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 3, false);
         }
         
         pw.println("}");
@@ -546,13 +555,9 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
     }
 
     public void warpCuts(double warpHeight, double length, int row, boolean whiteKey) {
-        
-        double extraForRowOne = 0;
-        if (row == 1 && whiteKey) {
-            extraForRowOne = blackKeyHeight;
-        }
 
-        for (double soFar = 0; soFar < length - (metalRoundRadius * 2 + 4) - 0.25 * warpHeight - extraForRowOne; soFar += warpHeight) {
+        
+        for (double soFar = 0; soFar < length - 0.5 * warpHeight; soFar += warpHeight) {
             if (row == 2) {
                 pw.println("translate([0,0.5*warpHeight,0])");
             }
@@ -579,7 +584,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         desiredGamut = 5;//2*periodSteps;//scan.nextInt();
 
         System.out.println("Desired Range:");
-        range = 4;//scan.nextInt();
+        range = 12;//scan.nextInt();
 
         System.out.println("Starting Piano Key (0-11, A=0,Bb=1,etc.):");
         startingKey = 5;//scan.nextInt();
@@ -622,13 +627,11 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
 
         System.out.println("Flip layout vertically?:");
         
-        //things to change sometimes///////////////////////////////////////////////////
-        
         roughRender = false;
         
-        verticalFlip = false;
+        verticalFlip = false;//don't think I touch this anymore
         
-        shiftXTrue = false;
+        shiftXTrue = false;//don't touch this either don't think
 
         stepsForLarge = 1;
         

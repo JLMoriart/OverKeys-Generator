@@ -13,7 +13,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             generator, holeScaleX, holeScaleY, stalkScaleX, stalkScaleY, keytopHeightDifference;
     double metalRoundRadiusTolerance=0.1;
     int periodSteps, generatorSteps, desiredGamut, startingKey, range, genForLargeStep, genForSmallStep, stepsForLarge, stepsForSmall, genForStep1, genForStep1b;
-    boolean isKeytop, verticalFlip, neededAbsoluteValue=false, shiftXTrue, roughRender=false;
+    boolean isKeytop, verticalFlip, neededAbsoluteValue=false, shiftXTrue, roughRender=false, keytopsInTogether;
 
     ArrayList<Integer> mosSizes = new ArrayList<>();
     ArrayList<mosScale> mosTracker = new ArrayList<>();
@@ -30,7 +30,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         //boolean isWhiteKey;//false by default//SHOULD I SET THIS  I DON'T REMEMBER
 
         File together = new File("C:\\Users\\FlacidRichard\\Desktop\\OPENSCAD_DUMP\\together.scad");//together is the big collection of keys and keytops that will show if everything worked correctly
-        System.out.println(together.getParentFile().mkdirs() + "<-------This is whether the makedirs succeeded or not");
+        System.out.println(together.getParentFile().mkdirs() + "<-------This is whether the makedirs succeeded or , but it never succeeds, and always succeeds");
         try {
             togetherPrint = new PrintWriter(together, "UTF-8");
         } catch (Exception e) {
@@ -72,7 +72,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
 
                 togetherPrint.println("])");
                 //togetherPrint.println("rotate([0,90,0])");
-                togetherPrint.println(i + "_" + currentGenerator + "(true);");
+                togetherPrint.println(i + "_" + currentGenerator + "("+keytopsInTogether+");");
 
                 pw.println("use<keytop.scad>");
                 pw.println("include<values.scad>");
@@ -266,7 +266,6 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
                 pwKeyTop.println("1);");
 
                 pwKeyTop.print("edge(7,6,1,");
-                //if(Math.atan(-a/(b-2*shiftX))>0) pwKeyTop.print("-");
                 pwKeyTop.println("-1);");
 
                 pwKeyTop.print("edge(7,8,1,");
@@ -277,7 +276,6 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
                 pwKeyTop.println("1);");
 
                 pwKeyTop.print("edge(9,10,1,");
-                //if(Math.atan(-a/(b-2*shiftX))<0) pwKeyTop.print("-");
                 pwKeyTop.println("1);");
 
                 pwKeyTop.print("edge(10,11,1,");
@@ -631,7 +629,9 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         
         verticalFlip = false;//don't think I touch this anymore
         
-        shiftXTrue = false;//don't touch this either don't think
+        shiftXTrue = false;
+        
+        keytopsInTogether = true;
 
         stepsForLarge = 1;
         
@@ -654,8 +654,8 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         System.out.println("stepsForLarge:" + stepsForLarge);
         System.out.println("periodWidth:" + periodWidth);
         
-        double vGap=2;//0.5, Carl-->2
-        double hGap=0.75;//2.5, 3.5 Carl
+        double vGap=2.25;//was 2
+        double hGap=1;//was 0.75
         
         if ((!verticalFlip && !neededAbsoluteValue) || (verticalFlip && neededAbsoluteValue)) {
                 d = genForSmallStep * genhPreShortening -vGap;
@@ -670,11 +670,18 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
                 d = genForLargeStep * genhPreShortening -vGap;     
         }
 
+        /*
+        this is confusing but I think this is how it's working:
+        It calculates a b c and d as if we didn't have to worry about not putting the keytops directly over he pivot point
+        then, using those values, it makes the white key shorter (by overhead, and 0.25*(a+d) so that not even the top of the highest key is over the overhead aread)
+        Now we need to recalculate a b c and d for this new length. We do that, and it just sticks out by the overhead amount
+        
+        */
 
         System.out.println("a:" + a + " b:" + b + " c:" + c + " d:" + d);
 
         
-        whiteKeyLength = whiteKeyLengthPreShortening-(metalRoundRadius * 2 + 4 + (a + d) * 0.5);
+        whiteKeyLength = whiteKeyLengthPreShortening-(metalRoundRadius * 2 + 4 + (a + d) * 0.25);//dang haha I think the + 4 thing should be a variable. It's... the extra distance for the metal round/rod hole from the edge I think
         genh = whiteKeyLength / desiredGamut;
         
         if ((!verticalFlip && !neededAbsoluteValue) || (verticalFlip && neededAbsoluteValue)) {
@@ -695,18 +702,23 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
 
         shiftX = (b+c)/8;
         shiftY = (a+d)/8;
-        if(shiftXTrue)
-            slantCutWidth = b+c-shiftX;
-        else
-            slantCutWidth = (b+c)/2-underKeyWidth/6;
-        nutHoleScale=1.05;
-
         
-        double xToleranceGap=0.5;//1.75;C-0.5
+        double xToleranceGap=0.75;//1.75;C-0.5
         double yToleranceGap=1.5;//2.25;C-1.5
         
-        stalkScaleX = Math.min(underKeyWidth / (b + c - shiftX*2),0.5);
+        
+        if(shiftXTrue){
+            slantCutWidth = b+c-shiftX;
+            stalkScaleX = Math.min(underKeyWidth / (b + c - shiftX*2),0.5);
+        }
+        else{
+            slantCutWidth = (b+c)/2-underKeyWidth/6;
+            stalkScaleX = Math.min(underKeyWidth / (b + c),0.5);
+        }
+        
         stalkScaleY = 0.5;
+        
+        nutHoleScale=1.05;//????????????????
 
         holeScaleX = ((b + c) * stalkScaleX + xToleranceGap) / (b + c);
         holeScaleY = ((a + d) * stalkScaleY + yToleranceGap) / (a + d);

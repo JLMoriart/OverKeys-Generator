@@ -11,9 +11,9 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             genh, genhPreShortening, overhead, keyTopSide1, keyTopSide2, shiftX,shiftY,slantCutWidth,clampDepth,//derived stuff
             theta, q, r, a, aPreShortening, b, c, d, dPreShortening, z,//bunch of triangle stuff
             generator, holeScaleX, holeScaleY, stalkScaleX, stalkScaleY, keytopHeightDifference;
-    double metalRoundRadiusTolerance=0.1;
+    double metalRoundRadiusTolerance=0.1, underKeyGap;
     int periodSteps, generatorSteps, desiredGamut, startingKey, range, genForLargeStep, genForSmallStep, stepsForLarge, stepsForSmall, genForStep1, genForStep1b;
-    boolean isKeytop, verticalFlip, neededAbsoluteValue=false, shiftXTrue, roughRender=false, keytopsInTogether;
+    boolean isKeytop, verticalFlip, neededAbsoluteValue=false, shiftXTrue, roughRender, keytopsInTogether, keytopsInSingleKeyFiles;
 
     ArrayList<Integer> mosSizes = new ArrayList<>();
     ArrayList<mosScale> mosTracker = new ArrayList<>();
@@ -77,7 +77,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
                 pw.println("use<keytop.scad>");
                 pw.println("include<values.scad>");
                 pw.println(i + "_" + currentGenerator + "();");
-                pw.println("module " + i + "_" + currentGenerator + "(keytops=false){");
+                pw.println("module " + i + "_" + currentGenerator + "(keytops="+keytopsInSingleKeyFiles+"){");
 
                 createMainBase(currentGenerator, keytopsNeeded, i, currentPianoKey);
 
@@ -342,7 +342,9 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             pw.println("}");
 
             pw.println("if(keytops)");
-            pw.println("translate([-0.25*(b+c),(-0.25*(a+d)),50-" + ((double) currentGeneratorIn / (double) desiredGamut) * keytopHeightDifference);
+            
+            pw.println("translate([-0.25*(b+c),(-0.25*(a+d)),60-" + ((double) currentGeneratorIn / (double) desiredGamut) * keytopHeightDifference);
+            
             if(!isWhiteKey(currentPianoKeyIn)){
                 pw.println("-((blackKeyHeight+0.75*(metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4))-0.75*(blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4))");//if black key, drop down by the difference bewteen the different stalks' starting heights
             }
@@ -555,7 +557,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
     public void warpCuts(double warpHeight, double length, int row, boolean whiteKey) {
 
         
-        for (double soFar = 0; soFar < length - 0.5 * warpHeight; soFar += warpHeight) {
+        for (double soFar = 0; soFar < length - warpHeight; soFar += warpHeight) {
             if (row == 2) {
                 pw.println("translate([0,0.5*warpHeight,0])");
             }
@@ -567,75 +569,51 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
     }
 
     public void getUserInputAndDeriveConstants() {
+        octaveWidth = 162.71875;
+        blackKeyHeight = 9.525;
+        whiteKeyLengthPreShortening = 130.175;
+        
+        keytopHeightDifference = 10;
+        metalRoundRadius = 2.5;
+        
+        roughRender = false;
+        keytopsInSingleKeyFiles = false;
+        keytopsInTogether = true;
+        
+        verticalFlip = false;//don't think I touch this anymore
+        shiftXTrue = false;//if not, shift Y. This is terrible code
+        
+        periodSteps = 2;
+        generatorSteps = 1;
+        desiredGamut = 5;//2*periodSteps?
+        range = 12;
+        startingKey = 5;
+        stepsForLarge = 1;
+       
+        //these are sort of broken because instead of setting the distance between edges,
+        //it just shrinks the model so that the highest and rightest point are moved these amounts
+        //Gaps for stalkHole fit
+        double xToleranceGap=1;
+        double yToleranceGap=1.5;
+        //for keytop gaps
+        double hGap=0.875;
+        double vGap=2.125;
+        underKeyGap= 0.46875;
+        nutHoleScale=1.05;//????????????????
 
-        System.out.println("Number of tuning steps per period:");
-        periodSteps = 2;//scan.nextInt();
-
-        System.out.println("Steps to generator:");
-        generatorSteps = 1;//scan.nextInt();
-
+        periodWidth = octaveWidth / 12 * periodSteps;
+        underKeyWidth = octaveWidth / 12.0 - underKeyGap;
+        genhPreShortening = whiteKeyLengthPreShortening / desiredGamut;
+        clampDepth = metalRoundRadius*8;
+        
         determineMOS();
 
         System.out.println(checkCoprime(periodSteps, generatorSteps));
-
-        System.out.println("Desired Gamut:");
-        desiredGamut = 5;//2*periodSteps;//scan.nextInt();
-
-        System.out.println("Desired Range:");
-        range = 12;//scan.nextInt();
-
-        System.out.println("Starting Piano Key (0-11, A=0,Bb=1,etc.):");
-        startingKey = 5;//scan.nextInt();
-
-        System.out.println("Octave Width:");
-        octaveWidth = 164.5;//scan.nextDouble();
-        //165 full size
-        //146 midiPlus
-        //136(.5?) portasound
-
-        System.out.println("Metal Round Radius:");
-        metalRoundRadius = 2.5;//scan.nextDouble();
-
-        periodWidth = octaveWidth / 12 * periodSteps;
-        
-        //0.46875 was good for 165
-        //0.625 was good for 136
-        underKeyWidth = octaveWidth / 12.0 - 0.46875;//
-        
-        System.out.println("Black Key Height:");
-        blackKeyHeight = 12;//scan.nextDouble();
-        //12 Full Size
-        //8 midiPlus
-        //6 portasound
-
-        System.out.println("White Key Length:");
-        whiteKeyLengthPreShortening = 130;//139;//scan.nextDouble();//will need to shorten to accomodate "overhead" of metalRound and keytop overhang
-        //150 full size
-        //90 midiPlus *1.5=135
-        //80 portasound, *1.2= 96
-
-        genhPreShortening = whiteKeyLengthPreShortening / desiredGamut;
-
-        System.out.println("Please pick an MOS scale to connect by selecting the large step size. Your options are:");
 
         for (int i = 0; i < mosTracker.size(); i++) {
             System.out.println("\nSmall Step Size:" + mosTracker.get(i).smallSize + " Quantity:" + mosTracker.get(i).smallSteps);
             System.out.println("Large Step Size:" + mosTracker.get(i).largeSize + " Quantity" + mosTracker.get(i).largeSteps);
         }
-
-        System.out.println("Flip layout vertically?:");
-        
-        roughRender = false;
-        
-        verticalFlip = false;//don't think I touch this anymore
-        
-        shiftXTrue = false;
-        
-        keytopsInTogether = true;
-
-        stepsForLarge = 1;
-        
-        keytopHeightDifference = 10;
         
         int chosenMosScaleIndex;
 
@@ -643,19 +621,11 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             if (mosTracker.get(i).largeSize == stepsForLarge) {
                 chosenMosScaleIndex = i;
                 stepsForSmall = mosTracker.get(chosenMosScaleIndex).smallSize;
-                System.out.println("stepsForSmall:" + stepsForSmall);
                 break;
             }
         }
 
         determineGens();//find out what generator values get you to large and small step, as well as 1 step in whole tuning
-
-        System.out.println("stepsForSmall:" + stepsForSmall);
-        System.out.println("stepsForLarge:" + stepsForLarge);
-        System.out.println("periodWidth:" + periodWidth);
-        
-        double vGap=2.25;//was 2
-        double hGap=1;//was 0.75
         
         if ((!verticalFlip && !neededAbsoluteValue) || (verticalFlip && neededAbsoluteValue)) {
                 d = genForSmallStep * genhPreShortening -vGap;
@@ -677,10 +647,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         Now we need to recalculate a b c and d for this new length. We do that, and it just sticks out by the overhead amount
         
         */
-
-        System.out.println("a:" + a + " b:" + b + " c:" + c + " d:" + d);
-
-        
+  
         whiteKeyLength = whiteKeyLengthPreShortening-(metalRoundRadius * 2 + 4 + (a + d) * 0.25);//dang haha I think the + 4 thing should be a variable. It's... the extra distance for the metal round/rod hole from the edge I think
         genh = whiteKeyLength / desiredGamut;
         
@@ -698,14 +665,8 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
                 d = genForLargeStep * genh -vGap;     
         }
         
-        System.out.println("a:" + a + " b:" + b + " c:" + c + " d:" + d);
-
         shiftX = (b+c)/8;
         shiftY = (a+d)/8;
-        
-        double xToleranceGap=0.75;//1.75;C-0.5
-        double yToleranceGap=1.5;//2.25;C-1.5
-        
         
         if(shiftXTrue){
             slantCutWidth = b+c-shiftX;
@@ -718,14 +679,10 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         
         stalkScaleY = 0.5;
         
-        nutHoleScale=1.05;//????????????????
-
         holeScaleX = ((b + c) * stalkScaleX + xToleranceGap) / (b + c);
         holeScaleY = ((a + d) * stalkScaleY + yToleranceGap) / (a + d);
         
         overhead = metalRoundRadius * 2 + 4 + (a + d) * 0.25;
-        
-        clampDepth = metalRoundRadius*8;
     }
 
     public void determineMOS() {

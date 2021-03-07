@@ -26,8 +26,6 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
 
     public void generateFiles() {
         int currentPianoKey, currentGenerator;
-        //currentGenerator = 0;//initialize at 0 for now at least, could get user input
-        //boolean isWhiteKey;//false by default//SHOULD I SET THIS  I DON'T REMEMBER
 
         File together = new File("C:\\Users\\FlacidRichard\\Desktop\\OPENSCAD_DUMP\\together.scad");//together is the big collection of keys and keytops that will show if everything worked correctly
         System.out.println(together.getParentFile().mkdirs() + "<-------This is whether the makedirs succeeded or , but it never succeeds, and always succeeds");
@@ -50,7 +48,6 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         pwValues.close();
 
         for (int i = 0; i < range; i++) {//iterate keys until range is reached.
-
             //could check for duplicate files, NOT FOR NOWWWW
             currentPianoKey = (i + startingKey) % 12;//started on starting key, have moved i times, keys 12 steps apart are same underlying note
             if (verticalFlip) {
@@ -71,7 +68,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
                 togetherPrint.println("translate([-" + (i * octaveWidth / 12) + ",0,0");
 
                 togetherPrint.println("])");
-                //togetherPrint.println("rotate([0,90,0])");
+
                 togetherPrint.println(i + "_" + currentGenerator + "("+keytopsInTogether+");");
 
                 pw.println("use<keytop.scad>");
@@ -80,9 +77,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
                 pw.println("module " + i + "_" + currentGenerator + "(keytops="+keytopsInSingleKeyFiles+"){");
 
                 createMainBase(currentGenerator, keytopsNeeded, i, currentPianoKey);
-
                 createKeyStalks(currentGenerator, keytopsNeeded, currentPianoKey);
-
                 pw.println("}");
 
                 thinCuts(currentGenerator);
@@ -106,9 +101,6 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             pwClamp = new PrintWriter(file, "UTF-8");
             
             pwClamp.println("include<values.scad>;");
-            
-            
-            
             pwClamp.println("s=5.57*nutHoleScale;\n" +//m3 measurements
                             "e=6.26*nutHoleScale;\n" +
                             "p0 = [s/2,0];\n" +//hexagon points
@@ -132,13 +124,6 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             
             pwClamp.println("translate([0, metalRoundRadius*3,0])");//bend Cut
             pwClamp.println("cube([metalRoundRadius*0.75, clampDepth-(metalRoundRadius+2), underKeyWidth+1], true);");
-
-            
-            /*pwClamp.println("translate([0.5*(metalRoundRadius*2+4)-2.4,metalRoundRadius*3-1/2*s,-s/2])\n" +//nut hole and top triange
-                            "rotate([0,0,90])\n" +
-                            "rotate([90,0,0])\n" +
-                            "linear_extrude(height=5)\n" +
-                            "polygon(points);\n");*/
                             
             pwClamp.println("translate([-metalRoundRadius*2,metalRoundRadius*3,0])"//through hole and top triange
                     + "\nrotate([0,90,0])"
@@ -147,12 +132,6 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
                     + "\nrotate([45,0,0])"
                     + "\ncube([(metalRoundRadius+2)*5,2*nutHoleScale,2*nutHoleScale]);");
             
-            /*pwClamp.println("translate([-5/2-metalRoundRadius,metalRoundRadius*3,0])"
-                    + "\nrotate([0,90,0])"
-                    + "\ncylinder(5+2,3*nutHoleScale,3*nutHoleScale, true);");
-            pwClamp.println("translate([-5/2-metalRoundRadius-(5+2)/2,metalRoundRadius*3,0])"
-                    + "\nrotate([45,0,0])"
-                    + "\ncube([5+2,3*nutHoleScale,3*nutHoleScale]);");*/
             pwClamp.println("}");//difference end
             
             pwClamp.println("module guard(){");
@@ -232,9 +211,6 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             pwKeyTop.println("keytopShape();");
             
             //edges rounded by subtracting module below
-            
-            
-            
             if(shiftXTrue)
             {
                 pwKeyTop.print("edge(11,6,1,");
@@ -296,12 +272,8 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             pwKeyTop.println("rotate([0,90,atan((Points[point2][1]-Points[point1][1])/(Points[point2][0]-Points[point1][0]))])");
             pwKeyTop.println("translate([d1*edgeRadius,d2*edgeRadius,0])");
             pwKeyTop.println("cylinder(pow(pow(Points[point1][0]-Points[point2][0],2)+pow(Points[point1][1]-Points[point2][1],2),0.5)*2,edgeRadius+tolerance,edgeRadius+tolerance, true);");//don't need to fill in much here since it's already got the points
-            //pwKeyTop.println("echo(atan((Points[point2][1]-Points[point1][1])/(Points[point2][0]-Points[point1][0])));");
             pwKeyTop.println("}");
             pwKeyTop.println("}");
-
-            pwKeyTop.println("");
-
             pwKeyTop.println("}");//DIFFERENCE END
             pwKeyTop.close();
         } catch (IOException e) {
@@ -323,7 +295,6 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
     public void createKeyStalks(int currentGeneratorIn, int keytopsNeeded, int currentPianoKeyIn) {
         pw.println("//Key Stalks:");
         for (int j = 0; j < keytopsNeeded; j++) {//j changes generator to enharmonically eqauivalent values by being increasing by periodSteps until greater than gamut
-
             if (isWhiteKey(currentPianoKeyIn)) {
                 pw.println("translate([underKeyWidth/2-(b+c)*stalkScaleX/2,genh*" + currentGeneratorIn + "+overhead,0.75*(blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4)]){");
             } else {
@@ -342,15 +313,12 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             pw.println("}");
 
             pw.println("if(keytops)");
-            
             pw.println("translate([-0.25*(b+c),(-0.25*(a+d)),60-" + ((double) currentGeneratorIn / (double) desiredGamut) * keytopHeightDifference);
-            
             if(!isWhiteKey(currentPianoKeyIn)){
                 pw.println("-((blackKeyHeight+0.75*(metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4))-0.75*(blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4))");//if black key, drop down by the difference bewteen the different stalks' starting heights
             }
             pw.println("])");//
             pw.println("keytop();");
-
             pw.println("}");
             currentGeneratorIn += periodSteps;
         }
@@ -459,7 +427,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
 
     public void createMainBase(int currentGenerator, int keytopsNeeded, int i, int currentPianoKey) {
         double length;//length of main base
-        length = genh * (currentGenerator + (keytopsNeeded - 1) * periodSteps) + overhead + stalkScaleY * (a + d);//-genh*currentGenerator%periodSteps;
+        length = genh * (currentGenerator + (keytopsNeeded - 1) * periodSteps) + overhead + stalkScaleY * (a + d);
         System.out.println("length: " +length);
         pw.println("length=" + length + ";");
         pw.println("difference(){"
@@ -479,7 +447,6 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             pw.println("cube([underKeyWidth,metalRoundRadius*2+4,blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4],false);");
         } else {
             pw.println("cube([underKeyWidth,metalRoundRadius*2+4,metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4],false);");
-
         }
 
         pw.println("translate([0,metalRoundRadius*2+4,0])");
@@ -488,7 +455,6 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             pw.println("cube([underKeyWidth,length-(metalRoundRadius*2+4),blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4],false);");
         } else {
             pw.println("cube([underKeyWidth,length-(metalRoundRadius*2+4),metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4],false);");
-
         }
         
         pw.println("translate([0.5*underKeyWidth,length,0])");
@@ -497,7 +463,6 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             pw.println("cylinder(h=blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4, r=underKeyWidth/6);");
         } else {
             pw.println("cylinder(h=metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4, r=underKeyWidth/6);");
-
         }
 
         pw.println("}");
@@ -514,9 +479,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         } else {
             pw.println("translate([-.1,metalRoundRadius+2,metalRoundRadius+2])");
         }
-        
 
-        
         pw.println("union(){"
                 + "rotate([45,0,0])"
                 + "cube([underKeyWidth+0.2,metalRoundRadius+metalRoundRadiusTolerance,metalRoundRadius+metalRoundRadiusTolerance]);"
@@ -540,23 +503,15 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         
         if (isWhiteKey(currentPianoKey)) {
             pw.println("warpHeight=" + (blackKeyHeight + metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4) +";");
-            //warpCuts(blackKeyHeight + metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 1, true);
             warpCuts(blackKeyHeight + metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 2, true);
-            //warpCuts(blackKeyHeight + metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 3, true);
         } else {
             pw.println("warpHeight=" + (metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4) +";");
-            //warpCuts(metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 1, false);
             warpCuts(metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 2, false);
-            //warpCuts(metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 3, false);
         }
-        
         pw.println("}");
-
     }
 
     public void warpCuts(double warpHeight, double length, int row, boolean whiteKey) {
-
-        
         for (double soFar = 0; soFar < length - warpHeight; soFar += warpHeight) {
             if (row == 2) {
                 pw.println("translate([0,0.5*warpHeight,0])");
@@ -609,11 +564,6 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         determineMOS();
 
         System.out.println(checkCoprime(periodSteps, generatorSteps));
-
-        for (int i = 0; i < mosTracker.size(); i++) {
-            System.out.println("\nSmall Step Size:" + mosTracker.get(i).smallSize + " Quantity:" + mosTracker.get(i).smallSteps);
-            System.out.println("Large Step Size:" + mosTracker.get(i).largeSize + " Quantity" + mosTracker.get(i).largeSteps);
-        }
         
         int chosenMosScaleIndex;
 
@@ -703,22 +653,14 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             stepSizes = new StepSizeTracker();
             scaleSteps.add((currentGenerator * generatorSteps) % periodSteps);
             Collections.sort(scaleSteps);
-            System.out.println("\n\nScale size" + (scaleSteps.size() - 1));
-            System.out.println("scaleSteps:" + scaleSteps);
-            System.out.println("current Generator:" + currentGenerator + " just added:" + (currentGenerator * generatorSteps) % periodSteps);
             HashMap<Integer, Integer> tempStepHash;
 
             for (int h = 1; h < scaleSteps.size() - numberLess; h++) {//need to keep track of h in stepSizes to check for how many times it shows up
-                //System.out.println("In 1");
                 tempStepHash = new HashMap<>();
                 for (int i = h; i < scaleSteps.size() + h - numberLess; i++) {//works so far first time through where h=1 and size is 3
-                    //System.out.println("h:"+h +"  i:"+i);
-                    //System.out.println("In 2");
-                    if (i > scaleSteps.size() - 1) {
-                        //System.out.println("In 3");   
+                    if (i > scaleSteps.size() - 1) {  
                         stepSizes.addStep(h, scaleSteps.get(i - (scaleSteps.size() - 1)) + periodSteps - scaleSteps.get(i - h));
                     } else {
-                        //System.out.println("In 3");
                         stepSizes.addStep(h, scaleSteps.get(i) - scaleSteps.get(i - h));
                     }
                 }
@@ -726,18 +668,12 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
 
             boolean isMOS = true;
             for (int i = 0; i < stepSizes.stepBags.size(); i++) {
-                System.out.println("Checkign isMOS");
                 if (stepSizes.stepBags.get(i).size() > 2) {
                     isMOS = false;
-                    System.out.println("in false MOS");
-                    for (int j = 0; j < stepSizes.stepBags.get(i).size(); j++) {
-                        System.out.println(stepSizes.stepBags.get(i).get(j).size + " " + stepSizes.stepBags.get(i).get(j).amount);
-                    }
                 }
             }
 
             if (isMOS && isValidMOS(scaleSteps.size() - 1, mosSizes)) {
-                System.out.println("ADDING MOS");
                 mosSizes.add(scaleSteps.size() - 1);
                 if (stepSizes.stepBags.get(0).size() == 2) {
                     mosTracker.add(new mosScale(
@@ -752,12 +688,8 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
                             stepSizes.stepBags.get(0).get(0).size,
                             stepSizes.stepBags.get(0).get(0).amount));
                 }
-
             }
-
         }
-
-        //print out mos results here?
     }
 
     public boolean isValidMOS(int test, ArrayList<Integer> mosSizes) {
@@ -814,8 +746,6 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             genForLargeStep = Math.abs(genForSmallStep - periodSteps);
             neededAbsoluteValue=true;
         }
-        System.out.println("GEN FOR SMALL" + genForSmallStep);
-        System.out.println("GEN FOR LARGE" + genForLargeStep);
     }
 
     public boolean checkCoprime(int per, int gen) {//make sure user input of generator generates entire gamut of periodSteps
@@ -855,8 +785,6 @@ class mosScale {
             largeSteps = steps1In;
             largeSize = size1In;
         }
-        System.out.println("small size:" + smallSize);
-        System.out.println("large size:" + largeSize);
     }
 
     public mosScale(int scaleSizeIn, int smallSizeIn, int smallStepsIn) {

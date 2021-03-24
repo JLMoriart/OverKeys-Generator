@@ -459,7 +459,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         
         pw.println("translate([0.5*underKeyWidth,length,0])");
         
-        if (isWhiteKey(currentPianoKey)) {//main section, white key is taller
+        if (isWhiteKey(currentPianoKey)) {//rounded tip
             pw.println("cylinder(h=blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4, r=underKeyWidth/6);");
         } else {
             pw.println("cylinder(h=metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4, r=underKeyWidth/6);");
@@ -480,7 +480,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             pw.println("translate([-.1,metalRoundRadius+2,metalRoundRadius+2])");
         }
 
-        pw.println("union(){"
+        pw.println("union(){"//round rod hole + square top?
                 + "rotate([45,0,0])"
                 + "cube([underKeyWidth+0.2,metalRoundRadius+metalRoundRadiusTolerance,metalRoundRadius+metalRoundRadiusTolerance]);"
                 + "rotate([0,90,0])");
@@ -493,13 +493,13 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             pw.println("translate([underKeyWidth/10,-tolerance,0.125*(metalRoundRadius*2+8)])");//+8 because of 4 around hole I think I dunno who cares
         }
         
-        pw.println("mirror([0,1,0])");
+        pw.println("mirror([0,1,0])");//key number label
         pw.println("rotate([90,0,0])");
         pw.println("linear_extrude(height=0.5){");
         pw.println("text(\"" + i + "\",size=underKeyWidth/2);");//(metalRoundRadius*2+4)*0.75)//PROBALBY WANT TO FIGURE OUT HOW TO CENTER TEXT VERTICALLY AND HORIZONTALLY
         pw.println("}");
-
-        pw.println("//Warp Cuts:");
+        
+        /*pw.println("//Warp Cuts:");
         
         if (isWhiteKey(currentPianoKey)) {
             pw.println("warpHeight=" + (blackKeyHeight + metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4) +";");
@@ -508,7 +508,10 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             pw.println("warpHeight=" + (metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4) +";");
             warpCuts(metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 2, false);
         }
+        */
+        
         pw.println("}");
+        
     }
 
     public void warpCuts(double warpHeight, double length, int row, boolean whiteKey) {
@@ -536,7 +539,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         keytopsInTogether = true;
         
         verticalFlip = false;//don't think I touch this anymore
-        shiftXTrue = false;//if not, shift Y. This is terrible code
+        shiftXTrue = false;//if not, shift Y. This is terrible variable naming
         
         periodSteps = 2;
         generatorSteps = 1;
@@ -547,9 +550,10 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
        
         //these are sort of broken because instead of setting the distance between edges,
         //it just shrinks the model so that the highest and rightest point are moved these amounts
+        
         //Gaps for stalkHole fit
-        double xToleranceGap=1;
-        double yToleranceGap=1.5;
+        double xToleranceGap=0.5;
+        double yToleranceGap=0.75;
         //for keytop gaps
         double hGap=0.875;
         double vGap=2.125;

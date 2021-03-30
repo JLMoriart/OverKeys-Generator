@@ -326,8 +326,8 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
 
     public void createValuesFile() {
         if(roughRender){
-            pwValues.println("$fs=1.5;");
-            pwValues.println("$fa=15;");
+            pwValues.println("$fs=2;");
+            pwValues.println("$fa=20;");
         }else
         {
             pwValues.println("$fs=0.3675;");
@@ -532,27 +532,30 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         pw.println("//Warp Cuts:");
         
         if (isWhiteKey(currentPianoKey)) {
-            pw.println("warpHeight=" + (blackKeyHeight + metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4) +";");
-            warpCuts(blackKeyHeight + metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 2, true);
+            pw.println("warpHeight=" + whiteKeyHeight +";");
+            warpCuts(whiteKeyHeight, length, true);
         } else {
-            pw.println("warpHeight=" + (metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4) +";");
-            warpCuts(metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 2, false);
+            pw.println("warpHeight=" + (whiteKeyHeight-blackKeyHeight) +";");
+            warpCuts(whiteKeyHeight-blackKeyHeight, length, false);
         }
-        
-        
         pw.println("}");
         
     }
 
-    public void warpCuts(double warpHeight, double length, int row, boolean whiteKey) {
-        for (double soFar = 0; soFar < length - warpHeight; soFar += warpHeight) {
-            if (row == 2) {
-                pw.println("translate([0,0.5*warpHeight,0])");
-            }
-            pw.println("translate([-1,length-" + soFar + "," + row + "*warpHeight*0.5-warpHeight*0.25])");
+    public void warpCuts(double warpHeight, double length, boolean whiteKey) {
+        for (double soFar = metalRoundRadius*2+4; soFar < length - 0.25*warpHeight; soFar += warpHeight) {
+            pw.println("translate([0,0.25*warpHeight,0])");
+            pw.println("translate([-1," + soFar + "," + "warpHeight*0.5])");
             pw.println("rotate([0,90,0])");
             pw.println("linear_extrude(height=underKeyWidth+2)");
-            pw.println("polygon(points=[[0,0],[0.25*warpHeight,0.125*warpHeight],[0.5*warpHeight,0],[0.25*warpHeight,-0.125*warpHeight]]);");
+            pw.println("polygon(points=[[0,0],[0.25*warpHeight,0.125*warpHeight],[0.25*warpHeight,-0.125*warpHeight]]);");
+            if(soFar < length - 1.25*warpHeight){
+                pw.println("translate([0,0.25*warpHeight,0])");
+                pw.println("translate([-1," + soFar + "+warpHeight*0.5," + "0.75*warpHeight])");
+                pw.println("rotate([0,90,0])");
+                pw.println("linear_extrude(height=underKeyWidth+2)");
+                pw.println("polygon(points=[[0,0],[0.25*warpHeight,0.125*warpHeight],[0.25*warpHeight,-0.125*warpHeight]]);");
+            }
         }
     }
 
@@ -561,7 +564,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         blackKeyHeight = 9.525;
         whiteKeyLengthPreShortening = 130.175;
         
-        keytopHeightDifference = 10;
+        keytopHeightDifference = 25;
         metalRoundRadius = 2.5;
         
         roughRender = false;
@@ -574,7 +577,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         periodSteps = 2;
         generatorSteps = 1;
         desiredGamut = 5;//2*periodSteps?
-        range = 12;
+        range = 6;
         startingKey = 5;
         stepsForLarge = 1;
        

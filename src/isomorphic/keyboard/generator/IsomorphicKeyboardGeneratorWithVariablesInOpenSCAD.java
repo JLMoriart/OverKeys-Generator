@@ -7,7 +7,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
 
     Scanner scan = new Scanner(System.in);
     PrintWriter pw, pwKeyTop, pwClamp, pwValues, togetherPrint;
-    double metalRoundRadius, octaveWidth, periodWidth, underKeyWidth, blackKeyHeight, whiteKeyLength, whiteKeyLengthPreShortening, edgeRadius = 3, keytopHeight =10, tolerance=0.05, nutHoleScale,//measurements 
+    double metalRoundRadius, octaveWidth, periodWidth, underKeyWidth, blackKeyHeight, whiteKeyHeight, whiteKeyLength, whiteKeyLengthPreShortening, edgeRadius = 3, keytopHeight =10, tolerance=0.05, nutHoleScale,//measurements 
             genh, genhPreShortening, overhead, keyTopSide1, keyTopSide2, shiftX,shiftY,slantCutWidth,clampDepth,//derived stuff
             theta, q, r, a, aPreShortening, b, c, d, dPreShortening, z,//bunch of triangle stuff
             generator, holeScaleX, holeScaleY, stalkScaleX, stalkScaleY, keytopHeightDifference;
@@ -156,21 +156,21 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
     public void thinCuts(int currentGenerator) {
         pw.println("//Thin Cuts:");
         pw.println("translate([0,0,-tolerance]){");
-        pw.println("linear_extrude(height=blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4+2*tolerance)");
+        pw.println("linear_extrude(height=whiteKeyHeight+2*tolerance)");
         pw.println("polygon(points=[[-0.1,10],[-0.1,length+0.1],[underKeyWidth/3,length+0.1]]);");
-        pw.println("linear_extrude(height=blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4+2*tolerance)");
+        pw.println("linear_extrude(height=whiteKeyHeight+2*tolerance)");
         pw.println("polygon(points=[[underKeyWidth+0.1,10],[underKeyWidth+0.1,length+0.1],[underKeyWidth/3*2,length+0.1]]);");
         pw.println("\n}");
 
         pw.println("anglePoints=[\n"
-                + "[-underKeyWidth/3,10,blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4],\n"
-                + "[0,10,blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4],\n"
-                + "[underKeyWidth/3,length+0.1,blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4],\n"
-                + "[0,length+0.1,blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4],\n"
-                + "[-slantCutWidth-underKeyWidth/3,10,blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4+slantCutWidth],\n"
-                + "[-slantCutWidth,10,blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4+slantCutWidth],\n"
-                + "[-slantCutWidth+underKeyWidth/3,length+0.1,blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4+slantCutWidth],\n"
-                + "[-slantCutWidth,length+0.1,blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4+slantCutWidth]];");
+                + "[-underKeyWidth/3,10,whiteKeyHeight],\n"
+                + "[0,10,whiteKeyHeight],\n"
+                + "[underKeyWidth/3,length+0.1,whiteKeyHeight],\n"
+                + "[0,length+0.1,whiteKeyHeight],\n"
+                + "[-slantCutWidth-underKeyWidth/3,10,whiteKeyHeight+slantCutWidth],\n"
+                + "[-slantCutWidth,10,whiteKeyHeight+slantCutWidth],\n"
+                + "[-slantCutWidth+underKeyWidth/3,length+0.1,whiteKeyHeight+slantCutWidth],\n"
+                + "[-slantCutWidth,length+0.1,whiteKeyHeight+slantCutWidth]];");
 
         pw.println("angleFaces=["
                 + "[0,1,2,3],"
@@ -296,12 +296,12 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         pw.println("//Key Stalks:");
         for (int j = 0; j < keytopsNeeded; j++) {//j changes generator to enharmonically eqauivalent values by being increasing by periodSteps until greater than gamut
             if (isWhiteKey(currentPianoKeyIn)) {
-                pw.println("translate([underKeyWidth/2-(b+c)*stalkScaleX/2,genh*" + currentGeneratorIn + "+overhead,0.75*(blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4)]){");
+                pw.println("translate([underKeyWidth/2-(b+c)*stalkScaleX/2,genh*" + currentGeneratorIn + "+overhead,0.75*(whiteKeyHeight)]){");
             } else {
                 pw.println("translate([underKeyWidth/2-(b+c)*stalkScaleX/2,genh*" + currentGeneratorIn + "+overhead,blackKeyHeight+0.75*(metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4)]){");
             }
             if (isWhiteKey(currentPianoKeyIn)) {
-                pw.println("linear_extrude(height=(keytopHeight*0.75+keytopHeightDifference-(" + ((double) currentGeneratorIn / (double) desiredGamut) * keytopHeightDifference + ")+0.25*(blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4))){");//*0.75 to leave 0.25 extra to be taken up by support angle things
+                pw.println("linear_extrude(height=(keytopHeight*0.75+keytopHeightDifference-(" + ((double) currentGeneratorIn / (double) desiredGamut) * keytopHeightDifference + ")+0.25*(whiteKeyHeight))){");//*0.75 to leave 0.25 extra to be taken up by support angle things
             } else {
                 pw.println("linear_extrude(height=(keytopHeight*0.75+keytopHeightDifference-(" + ((double) currentGeneratorIn / (double) desiredGamut) * keytopHeightDifference + ")+0.25*(metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4))){");
             }
@@ -315,7 +315,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             pw.println("if(keytops)");
             pw.println("translate([-0.25*(b+c),(-0.25*(a+d)),60-" + ((double) currentGeneratorIn / (double) desiredGamut) * keytopHeightDifference);
             if(!isWhiteKey(currentPianoKeyIn)){
-                pw.println("-((blackKeyHeight+0.75*(metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4))-0.75*(blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4))");//if black key, drop down by the difference bewteen the different stalks' starting heights
+                pw.println("-((blackKeyHeight+0.75*(metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4))-0.75*(whiteKeyHeight))");//if black key, drop down by the difference bewteen the different stalks' starting heights
             }
             pw.println("])");//
             pw.println("keytop();");
@@ -337,6 +337,8 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         pwValues.println("edgeRadius=" + edgeRadius + ";");
         pwValues.println("underKeyWidth=" + underKeyWidth + ";");
         pwValues.println("blackKeyHeight=" + blackKeyHeight + ";");
+        pwValues.println("whiteKeyHeight=" + (blackKeyHeight+metalRoundRadius+Math.sqrt(metalRoundRadius*metalRoundRadius*2)+4) + ";");
+        System.out.println("whiteKeyHeight: "+whiteKeyHeight +";");
         pwValues.println("genh=" + genh + ";");
         pwValues.println("a=" + a + ";");
         pwValues.println("b=" + b + ";");
@@ -444,7 +446,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         pw.println("union(){");
 
         if (isWhiteKey(currentPianoKey)) {//first little chunk to hold the metal round, independent of the rest of the main base
-            pw.println("cube([underKeyWidth,metalRoundRadius*2+4,blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4],false);");
+            pw.println("cube([underKeyWidth,metalRoundRadius*2+4,whiteKeyHeight],false);");
         } else {
             pw.println("cube([underKeyWidth,metalRoundRadius*2+4,metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4],false);");
         }
@@ -452,7 +454,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         pw.println("translate([0,metalRoundRadius*2+4,0])");
         
         if (isWhiteKey(currentPianoKey)) {//main section, white key is taller
-            pw.println("cube([underKeyWidth,length-(metalRoundRadius*2+4),blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4],false);");
+            pw.println("cube([underKeyWidth,length-(metalRoundRadius*2+4),whiteKeyHeight],false);");
         } else {
             pw.println("cube([underKeyWidth,length-(metalRoundRadius*2+4),metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4],false);");
         }
@@ -460,20 +462,48 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         pw.println("translate([0.5*underKeyWidth,length,0])");
         
         if (isWhiteKey(currentPianoKey)) {//rounded tip
-            pw.println("cylinder(h=blackKeyHeight+metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4, r=underKeyWidth/6);");
+            pw.println("cylinder(h=whiteKeyHeight, r=underKeyWidth/6);");
         } else {
             pw.println("cylinder(h=metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4, r=underKeyWidth/6);");
         }
 
         pw.println("}");
 
-        if (isWhiteKey(currentPianoKey)) {//THIS IS STUPID, SHOULD REWRITE, removes cut from back of white keys
-            pw.println("translate([0,blackKeyHeight,0])\n"
+        if (isWhiteKey(currentPianoKey)) {//round backs of white keys, vertically
+            pw.println("difference(){"
+                    + "translate([0,blackKeyHeight,0])\n"
                     + "rotate([45,0,0])\n"
                     + "translate([-25,-50,0])\n"
-                    + "cube([50,50,50]);");
+                    + "cube([50,50,50]);\n"
+                    + "translate([0,blackKeyHeight*2,blackKeyHeight])\n"
+                    + "rotate([0,90,0])\n"
+                    + "cylinder(r=blackKeyHeight*2, h=underKeyWidth);\n"
+                    + "}\n");
         }
+        
+        pw.println("difference(){\n"
+                + "translate([-tolerance,-tolerance,-tolerance])\n");
+        if(!isWhiteKey(currentPianoKey)){
+            pw.println("cube([underKeyWidth+tolerance*2,underKeyWidth/6, whiteKeyHeight-blackKeyHeight+tolerance*2]);\n"
+                + "translate([underKeyWidth/6,underKeyWidth/6,0])\n"
+                + "cylinder(r=underKeyWidth/6, h=whiteKeyHeight-blackKeyHeight+3*tolerance);\n"
+                + "translate([underKeyWidth-underKeyWidth/6,underKeyWidth/6,0])\n"
+                + "cylinder(r=underKeyWidth/6, h=whiteKeyHeight-blackKeyHeight);\n"
+                + "translate([underKeyWidth/6,-tolerance,-tolerance])\n"
+                + "cube([underKeyWidth*2/3, underKeyWidth/6+tolerance, whiteKeyHeight-blackKeyHeight+tolerance]);\n");
 
+        } else {
+            pw.println("cube([underKeyWidth+tolerance*2,underKeyWidth/6, whiteKeyHeight+tolerance*2]);\n"
+                + "translate([underKeyWidth/6,underKeyWidth/6,0])\n"
+                + "cylinder(r=underKeyWidth/6, h=whiteKeyHeight+3*tolerance);\n"
+                + "translate([underKeyWidth*5/6,underKeyWidth/6,0])\n"
+                + "cylinder(r=underKeyWidth/6, h=whiteKeyHeight+3*tolerance);\n"
+                + "translate([underKeyWidth/6,-tolerance,-tolerance])\n"
+                + "cube([underKeyWidth*2/3, underKeyWidth/6+tolerance, whiteKeyHeight+tolerance]);\n");
+        }
+        
+        pw.println("}\n");
+        
         if (isWhiteKey(currentPianoKey)) {
             pw.println("translate([-.1,metalRoundRadius+2,blackKeyHeight+metalRoundRadius+2])");
         } else {
@@ -499,7 +529,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         pw.println("text(\"" + i + "\",size=underKeyWidth/2);");//(metalRoundRadius*2+4)*0.75)//PROBALBY WANT TO FIGURE OUT HOW TO CENTER TEXT VERTICALLY AND HORIZONTALLY
         pw.println("}");
         
-        /*pw.println("//Warp Cuts:");
+        pw.println("//Warp Cuts:");
         
         if (isWhiteKey(currentPianoKey)) {
             pw.println("warpHeight=" + (blackKeyHeight + metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4) +";");
@@ -508,7 +538,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             pw.println("warpHeight=" + (metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4) +";");
             warpCuts(metalRoundRadius + Math.pow(metalRoundRadius * metalRoundRadius * 2, 0.5) + 4, length, 2, false);
         }
-        */
+        
         
         pw.println("}");
         
@@ -522,7 +552,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             pw.println("translate([-1,length-" + soFar + "," + row + "*warpHeight*0.5-warpHeight*0.25])");
             pw.println("rotate([0,90,0])");
             pw.println("linear_extrude(height=underKeyWidth+2)");
-            pw.println("polygon(points=[[0,0],[0.25*warpHeight,0.25*warpHeight],[0.5*warpHeight,0],[0.25*warpHeight,-0.25*warpHeight]]);");
+            pw.println("polygon(points=[[0,0],[0.25*warpHeight,0.125*warpHeight],[0.5*warpHeight,0],[0.25*warpHeight,-0.125*warpHeight]]);");
         }
     }
 
@@ -564,6 +594,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         underKeyWidth = octaveWidth / 12.0 - underKeyGap;
         genhPreShortening = whiteKeyLengthPreShortening / desiredGamut;
         clampDepth = metalRoundRadius*8;
+        whiteKeyHeight = blackKeyHeight+metalRoundRadius+Math.sqrt(metalRoundRadius*metalRoundRadius*2)+4;
         
         determineMOS();
 

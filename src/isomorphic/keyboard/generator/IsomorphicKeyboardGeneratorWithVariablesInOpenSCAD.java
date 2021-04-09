@@ -11,7 +11,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             genh, genhPreShortening, overhead, keyTopSide1, keyTopSide2, shiftX,shiftY,slantCutWidth,clampDepth,//derived stuff
             theta, q, r, a, aPreShortening, b, c, d, dPreShortening, z,//bunch of triangle stuff
             generator, holeScaleX, holeScaleY, stalkScaleX, stalkScaleY, keytopHeightDifference;
-    double metalRoundRadiusTolerance=0.1, underKeyGap;
+    double metalRoundRadiusTolerance=0.05, underKeyGap;
     int periodSteps, generatorSteps, desiredGamut, startingKey, range, genForLargeStep, genForSmallStep, stepsForLarge, stepsForSmall, genForStep1, genForStep1b;
     boolean isKeytop, verticalFlip, neededAbsoluteValue=false, shiftXTrue, roughRender, keytopsInTogether, keytopsInSingleKeyFiles;
 
@@ -28,7 +28,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         int currentPianoKey, currentGenerator;
 
         File together = new File("C:\\Users\\FlacidRichard\\Desktop\\OPENSCAD_DUMP\\together.scad");//together is the big collection of keys and keytops that will show if everything worked correctly
-        System.out.println(together.getParentFile().mkdirs() + "<-------This is whether the makedirs succeeded or , but it never succeeds, and always succeeds");
+
         try {
             togetherPrint = new PrintWriter(together, "UTF-8");
         } catch (Exception e) {
@@ -301,9 +301,9 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
                 pw.println("translate([underKeyWidth/2-(b+c)*stalkScaleX/2,genh*" + currentGeneratorIn + "+overhead,blackKeyHeight+0.75*(metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4)]){");
             }
             if (isWhiteKey(currentPianoKeyIn)) {
-                pw.println("linear_extrude(height=(keytopHeight*0.75+keytopHeightDifference-(" + ((double) currentGeneratorIn / (double) desiredGamut) * keytopHeightDifference + ")+0.25*(whiteKeyHeight))){");//*0.75 to leave 0.25 extra to be taken up by support angle things
+                pw.println("linear_extrude(height=(keytopHeight+keytopHeightDifference-(" + ((double) (currentGeneratorIn+1.0) / (double) desiredGamut) * keytopHeightDifference + ")+0.25*(whiteKeyHeight))){");//*0.75 to leave 0.25 extra to be taken up by support angle things
             } else {
-                pw.println("linear_extrude(height=(keytopHeight*0.75+keytopHeightDifference-(" + ((double) currentGeneratorIn / (double) desiredGamut) * keytopHeightDifference + ")+0.25*(metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4))){");
+                pw.println("linear_extrude(height=(keytopHeight+keytopHeightDifference-(" + ((double) (currentGeneratorIn+1.0) / (double) desiredGamut) * keytopHeightDifference + ")+0.25*(metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4))){");
             }
 
             pw.println("scale([stalkScaleX,stalkScaleY])");
@@ -564,12 +564,12 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         blackKeyHeight = 9.525;
         whiteKeyLengthPreShortening = 130.175;
         
-        keytopHeightDifference = 25;
+        keytopHeightDifference = 33;
         metalRoundRadius = 2.5;
         
         roughRender = false;
         keytopsInSingleKeyFiles = false;
-        keytopsInTogether = true;
+        keytopsInTogether = false;
         
         verticalFlip = false;//don't think I touch this anymore
         shiftXTrue = false;//if not, shift Y. This is terrible variable naming
@@ -577,7 +577,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         periodSteps = 2;
         generatorSteps = 1;
         desiredGamut = 5;//2*periodSteps?
-        range = 6;
+        range = 12;
         startingKey = 5;
         stepsForLarge = 1;
        
@@ -585,11 +585,12 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         //it just shrinks the model so that the highest and rightest point are moved these amounts
         
         //Gaps for stalkHole fit
-        double xToleranceGap=0.5;
-        double yToleranceGap=0.75;
+        double xToleranceGap=0.45;
+        double yToleranceGap=0.7;
         //for keytop gaps
         double hGap=0.875;
         double vGap=2.125;
+        
         underKeyGap= 0.46875;
         nutHoleScale=1.05;//????????????????
 

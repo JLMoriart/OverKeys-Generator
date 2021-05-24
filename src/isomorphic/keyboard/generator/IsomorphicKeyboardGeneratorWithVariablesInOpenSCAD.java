@@ -11,7 +11,7 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
             genh, genhPreShortening, overhead, keyTopSide1, keyTopSide2, shiftX,shiftY,slantCutWidth,clampDepth,//derived stuff
             theta, q, r, a, aPreShortening, b, c, d, dPreShortening, z,//bunch of triangle stuff
             generator, holeScaleX, holeScaleY, stalkScaleX, stalkScaleY, keytopHeightDifference;
-    double metalRoundRadiusTolerance=0.05, underKeyGap;
+    double metalRoundRadiusTolerance=0.0125, underKeyGap;
     int periodSteps, generatorSteps, desiredGamut, startingKey, range, genForLargeStep, genForSmallStep, stepsForLarge, stepsForSmall, genForStep1, genForStep1b;
     boolean isKeytop, verticalFlip, neededAbsoluteValue=false, shiftXTrue, roughRender, keytopsInTogether, keytopsInSingleKeyFiles;
 
@@ -560,11 +560,11 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
     }
 
     public void getUserInputAndDeriveConstants() {
-        octaveWidth = 162.71875;
-        blackKeyHeight = 9.525;
-        whiteKeyLengthPreShortening = 130.175;
+        octaveWidth = 164.5;
+        blackKeyHeight = 12;
+        whiteKeyLengthPreShortening = 148;
         
-        keytopHeightDifference = 33;
+        keytopHeightDifference = 15;
         metalRoundRadius = 2.5;
         
         roughRender = false;
@@ -572,11 +572,11 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         keytopsInTogether = false;
         
         verticalFlip = false;//don't think I touch this anymore
-        shiftXTrue = false;//if not, shift Y. This is terrible variable naming
+        shiftXTrue = true;//if not, shift Y. This is terrible variable naming
         
-        periodSteps = 2;
-        generatorSteps = 1;
-        desiredGamut = 5;//2*periodSteps?
+        periodSteps = 12;
+        generatorSteps = 5;
+        desiredGamut = 24;//2*periodSteps?
         range = 12;
         startingKey = 5;
         stepsForLarge = 1;
@@ -585,8 +585,8 @@ public class IsomorphicKeyboardGeneratorWithVariablesInOpenSCAD {
         //it just shrinks the model so that the highest and rightest point are moved these amounts
         
         //Gaps for stalkHole fit
-        double xToleranceGap=0.45;
-        double yToleranceGap=0.7;
+        double xToleranceGap=0.425;
+        double yToleranceGap=0.6;
         //for keytop gaps
         double hGap=0.875;
         double vGap=2.125;

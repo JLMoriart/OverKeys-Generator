@@ -6,7 +6,7 @@ public class OverKeysGenerator {
 
     Scanner scan = new Scanner(System.in);
     PrintWriter pw, pwKeyTop, pwClamp, pwValues, togetherPrint;
-    double metalRoundRadius, octaveWidth, periodWidth, underKeyWidth, blackKeyHeight, blackKeyLength, whiteKeyHeight, whiteKeyLength, whiteKeyLengthPreShortening, edgeRadius = 3, keytopHeight =10, tolerance=0.05, nutHoleScale,//measurements 
+    double metalRoundRadius, octaveWidth, periodWidth, underKeyWidth, blackKeyHeight, blackKeyLength, whiteKeyHeight, whiteKeyLength, whiteKeyLengthPreShortening, edgeRadius = 3, keytopHeight =10, tolerance=0.05,//measurements 
             genh, genhPreShortening, overhead, keyTopSide1, keyTopSide2, shiftX,shiftY,slantCutWidth,clampDepth,//derived stuff
             theta, q, r, a, aPreShortening, b, c, d, dPreShortening, z,//bunch of triangle stuff
             generator, holeScaleX, holeScaleY, stalkScaleX, stalkScaleY, keytopHeightDifference;
@@ -24,24 +24,25 @@ public class OverKeysGenerator {
     }
     
     public void getUserInputAndDeriveConstants() {
-        octaveWidth = 165;
-        blackKeyHeight = 12;
-        blackKeyLength = 100;//raNDOM FIND RIGHT VAlue using Measurements//////////
-        whiteKeyLengthPreShortening = 150;
+        octaveWidth = 164;
+        blackKeyHeight = 13;
+        blackKeyLength = 100;
+        whiteKeyLengthPreShortening = 148;
         
         keytopHeightDifference = 15;
         metalRoundRadius = 2.5;
         
         roughRender = false;
         keytopsInSingleKeyFiles = false;
-        keytopsInTogether = false;
+        keytopsInTogether = true;
         
         verticalFlip = false;//don't think I touch this anymore
-        shiftXTrue = true;//if not, shift Y. This is terrible variable naming
         
-        periodSteps = 12;
-        generatorSteps = 5;
-        desiredGamut = 24;//2*periodSteps?
+        shiftXTrue = false;//if not, shift Y. This is terrible variable naming
+        
+        periodSteps = 2;
+        generatorSteps = 1;
+        desiredGamut = 6;//2*periodSteps?
         range = 12;
         startingKey = 5;
         stepsForLarge = 1;
@@ -50,15 +51,14 @@ public class OverKeysGenerator {
         //it just shrinks the model so that the highest and rightest point are moved these amounts
         
         //Gaps for stalkHole fit
-        double xToleranceGap=0.6;
-        double yToleranceGap=0.4;
+        double xToleranceGap=0.3;
+        double yToleranceGap=0.2;
         
         //for keytop gaps
-        double hGap=0.875;
-        double vGap=2.125;
+        double hGap=3;//2.125;
+        double vGap=0.5;
         
         underKeyGap= 0.46875;
-        nutHoleScale=1.05;//bigger for fit I assume????
 
         periodWidth = octaveWidth / 12 * periodSteps;
         underKeyWidth = octaveWidth / 12.0 - underKeyGap;
@@ -97,10 +97,10 @@ public class OverKeysGenerator {
 
         /*
         this is confusing but I think this is how it's working:
-        It calculates a b c and d as if we didn't have to worry about not putting the keytops directly over he pivot point
-        then, using those values, it makes the white key shorter (by overhead, and 0.25*(a+d) so that not even the top of the highest key is over the overhead aread)
+        It calculates a b c and d as if we didn't have to worry about not putting the keytops directly over the pivot point
+        Then, using those values, it makes the white key shorter (by overhead, and 0.25*(a+d) so that not even the top of the highest key is over the pivot point)
         Now we need to recalculate a b c and d for this new length. We do that, and it just sticks out by the overhead amount
-        
+        lmao who needs functions when you can copy and past the same code over and over
         */
   
         whiteKeyLength = whiteKeyLengthPreShortening-(metalRoundRadius * 2 + 4 + (a + d) * 0.25);//dang haha I think the + 4 thing should be a variable. It's... the extra distance for the metal round/rod hole from the edge I think
@@ -244,7 +244,6 @@ public class OverKeysGenerator {
         pwValues.println("keytopHeight=" + keytopHeight + ";");
         pwValues.println("tolerance=" + tolerance + ";");
         pwValues.println("slantCutWidth=" + slantCutWidth + ";");
-        pwValues.println("nutHoleScale=" + nutHoleScale + ";");
         pwValues.println("clampDepth=" + clampDepth + ";");
         pwValues.println("shiftY =" + shiftY + ";");
         pwValues.println("keytopHeightDifference =" + keytopHeightDifference + ";");
@@ -441,20 +440,37 @@ public class OverKeysGenerator {
                     + "\n}");
         }
         
-        /*pw.println("//Warp Cuts:");
+        pw.println("//Warp Cuts:");
         
         if (isWhiteKey(currentPianoKey)) {
             pw.println("warpHeight=" + whiteKeyHeight +";");
-            warpCuts(whiteKeyHeight, length, true);
+            warpCuts(whiteKeyHeight, length, whiteKeyLengthPreShortening, true);
         } else {
             pw.println("warpHeight=" + (whiteKeyHeight-blackKeyHeight) +";");
-            warpCuts(whiteKeyHeight-blackKeyHeight, length, false);
+            warpCuts(whiteKeyHeight-blackKeyHeight, length, blackKeyLength, false);
         }
-        */
+        
         pw.println("}");
         
     }
- 
+    //chekc white or black key, stop after under length
+    public void warpCuts(double warpHeight, double underlyingLength, double length, boolean whiteKey) {
+        for (double soFar = metalRoundRadius*2+4; soFar < length - 0.25*warpHeight && soFar < underlyingLength - 0.25*warpHeight; soFar += warpHeight) {
+            pw.println("translate([0,0.25*warpHeight,0])");
+            pw.println("translate([-1," + soFar + "," + "warpHeight*0.5])");
+            pw.println("rotate([0,90,0])");
+            pw.println("linear_extrude(height=underKeyWidth+2)");
+            pw.println("polygon(points=[[0,0],[0.25*warpHeight,0.125*warpHeight],[0.25*warpHeight,-0.125*warpHeight]]);");
+            if(soFar < length - 1.25*warpHeight && soFar < underlyingLength - 0.76*warpHeight){
+                pw.println("translate([0,0.25*warpHeight,0])");
+                pw.println("translate([-1," + soFar + "+warpHeight*0.5," + "0.75*warpHeight])");
+                pw.println("rotate([0,90,0])");
+                pw.println("linear_extrude(height=underKeyWidth+2)");
+                pw.println("polygon(points=[[0,0],[0.25*warpHeight,0.125*warpHeight],[0.25*warpHeight,-0.125*warpHeight]]);");
+            }
+        }
+    }
+    
     public void thinCuts(int currentGenerator) {
         pw.println("//Thin Cuts:");
         pw.println("translate([0,0,-tolerance]){");
@@ -753,24 +769,6 @@ public class OverKeysGenerator {
         }
         return areCoprime;
     }
-    
-    public void warpCuts(double warpHeight, double length, boolean whiteKey) {
-        for (double soFar = metalRoundRadius*2+4; soFar < length - 0.25*warpHeight; soFar += warpHeight) {
-            pw.println("translate([0,0.25*warpHeight,0])");
-            pw.println("translate([-1," + soFar + "," + "warpHeight*0.5])");
-            pw.println("rotate([0,90,0])");
-            pw.println("linear_extrude(height=underKeyWidth+2)");
-            pw.println("polygon(points=[[0,0],[0.25*warpHeight,0.125*warpHeight],[0.25*warpHeight,-0.125*warpHeight]]);");
-            if(soFar < length - 1.25*warpHeight){
-                pw.println("translate([0,0.25*warpHeight,0])");
-                pw.println("translate([-1," + soFar + "+warpHeight*0.5," + "0.75*warpHeight])");
-                pw.println("rotate([0,90,0])");
-                pw.println("linear_extrude(height=underKeyWidth+2)");
-                pw.println("polygon(points=[[0,0],[0.25*warpHeight,0.125*warpHeight],[0.25*warpHeight,-0.125*warpHeight]]);");
-            }
-        }
-    }
-
 }
 
 class mosScale {

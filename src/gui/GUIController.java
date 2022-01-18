@@ -18,13 +18,14 @@ import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.Scanner;
+import java.text.DateFormat;
+import java.text.Format;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 
-public class GUIController implements Initializable{
+public class GUIController implements Initializable {
 
     @FXML
     public GridPane mainPane;
@@ -39,6 +40,10 @@ public class GUIController implements Initializable{
     public CheckBox keepScad;
     public Label message;
     public StackPane stackPane;
+    public RadioButton shiftXtrue;
+    public RadioButton shiftXfalse;
+    public ToggleGroup Group1;
+    public CheckBox roughRender;
 
     @FXML
     private TextField blackKeyHeight;
@@ -97,7 +102,7 @@ public class GUIController implements Initializable{
     @FXML
     private TextField whiteKeyLength;
 
-    public static final String SEPARATOR="::";
+    public static final String SEPARATOR = "::";
 
     @FXML
     void loadPreset(ActionEvent event) {
@@ -109,18 +114,35 @@ public class GUIController implements Initializable{
         Stage currentStage = (Stage) node.getScene().getWindow();
 
         File file = fileChooser.showOpenDialog(currentStage);
-        if (file !=null){
+        if (file != null) {
             loadScreenData(file);
         }
 
 
     }
 
-    void loadScreenData(File file){
-        Map<String,String> values=readFromFile(file);
-        for(String key:values.keySet()) {
-            TextField field=(TextField) mainPane.getScene().lookup("#"+key);
-            field.setText(values.get(key));
+    void loadScreenData(File file) {
+        Map<String, String> values = readFromFile(file);
+        for (String key : values.keySet()) {
+            if (key.equals("shiftXtrue")){
+                if (Integer.parseInt(values.get(key))==1)
+                    shiftXtrue.setSelected(true);
+                else
+                    shiftXfalse.setSelected(true);
+            }
+            else {
+                if (key.equals("roughRender")){
+                    if (Integer.parseInt(values.get(key))==1)
+                        roughRender.setSelected(true);
+                    else
+                        roughRender.setSelected(true);
+                }
+                 else {
+                    TextField field = (TextField) mainPane.getScene().lookup("#" + key);
+                    field.setText(values.get(key));
+                }
+            }
+
         }
         try {
             Files.copy(file.toPath(), (new File("./resources/config.txt").toPath()), StandardCopyOption.REPLACE_EXISTING);
@@ -147,13 +169,24 @@ public class GUIController implements Initializable{
             doubleValues.put("keytopYGap", Double.parseDouble(keytopYGap.getText()));
             doubleValues.put("underkeyGap", Double.parseDouble(underkeyGap.getText()));
 
-            intValues.put("halfStepsToPeriod",Integer.parseInt(halfStepsToPeriod.getText()));
-            intValues.put("halfStepsToGenerator",Integer.parseInt(halfStepsToGenerator.getText()));
-            intValues.put("halfStepsToLargeMOSStep",Integer.parseInt(halfStepsToLargeMOSStep.getText()));
-            intValues.put("gamut",Integer.parseInt(gamut.getText()));
-            intValues.put("range",Integer.parseInt(range.getText()));
-            intValues.put("startingKey",Integer.parseInt(startingKey.getText()));
-
+            intValues.put("halfStepsToPeriod", Integer.parseInt(halfStepsToPeriod.getText()));
+            intValues.put("halfStepsToGenerator", Integer.parseInt(halfStepsToGenerator.getText()));
+            intValues.put("halfStepsToLargeMOSStep", Integer.parseInt(halfStepsToLargeMOSStep.getText()));
+            intValues.put("gamut", Integer.parseInt(gamut.getText()));
+            intValues.put("range", Integer.parseInt(range.getText()));
+            intValues.put("startingKey", Integer.parseInt(startingKey.getText()));
+            if (shiftXtrue.isSelected()){
+                intValues.put("shiftXtrue",1);
+            }
+            else {
+                intValues.put("shiftXtrue",0);
+            }
+            if (roughRender.isSelected()){
+                intValues.put("roughRender",1);
+            }
+            else {
+                intValues.put("roughRender",0);
+            }
             FileChooser fileChooser = new FileChooser();
             FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("TXT files (*.txt)", "*.txt");
             fileChooser.getExtensionFilters().add(extFilter);
@@ -163,8 +196,8 @@ public class GUIController implements Initializable{
 
             File file = fileChooser.showSaveDialog(currentStage);
 
-            if (file !=null){
-                saveToFile(doubleValues,intValues,file);
+            if (file != null) {
+                saveToFile(doubleValues, intValues, file);
             }
 
         } catch (NumberFormatException e) {
@@ -176,10 +209,10 @@ public class GUIController implements Initializable{
         try {
             PrintWriter writer;
             writer = new PrintWriter(file);
-            for(String key:doubleValues.keySet())
-                writer.println(key+SEPARATOR+doubleValues.get(key));
-            for(String key:intValues.keySet())
-                writer.println(key+SEPARATOR+intValues.get(key));
+            for (String key : doubleValues.keySet())
+                writer.println(key + SEPARATOR + doubleValues.get(key));
+            for (String key : intValues.keySet())
+                writer.println(key + SEPARATOR + intValues.get(key));
             writer.close();
             Files.copy(file.toPath(), (new File("./resources/config.txt").toPath()), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException ex) {
@@ -189,7 +222,7 @@ public class GUIController implements Initializable{
     }
 
     private Map<String, String> readFromFile(File file) {
-        Map<String,String> values=new HashMap<>();
+        Map<String, String> values = new HashMap<>();
 
         try (Scanner sc = new Scanner(file)) {
             while (sc.hasNextLine()) {
@@ -211,73 +244,31 @@ public class GUIController implements Initializable{
         Stage currentStage = (Stage) node.getScene().getWindow();
 
         File file = directoryChooser.showDialog(currentStage);
-        if (file!=null)
+        if (file != null)
             renderFolder.setText(file.getAbsolutePath());
     }
 
-    public void renderFiles(ActionEvent actionEvent) {
+    public void generateFiles(ActionEvent actionEvent) {
         OverKeysGenerator IKG = new OverKeysGenerator();
 
-        if (!renderFolder.getText().trim().equals("") || !openscadPath.getText().trim().equals("")){
-            String pathToExe=openscadPath.getText().trim();
-            String pathToRender=renderFolder.getText().trim();
-            File openScad=new File(pathToExe);
+        if (!renderFolder.getText().trim().equals("")) {
 
-            boolean keep=keepScad.isSelected();
+            Date date=new Date();
+            DateFormat dateFormat = new SimpleDateFormat("yyyyMMddhhmmss");
+            String filepostfix = dateFormat.format(date);
 
-            if (openScad.exists()) {
-                IKG.setRenderPath(renderFolder.getText());
-                if (IKG.setConstantsFromConfig())
-                    IKG.setDefaultConstants();
-                IKG.getUserInputAndDeriveConstants();
-                IKG.generateFiles();
+            IKG.setRenderPath(renderFolder.getText());
+            IKG.setFilepostfix("_"+filepostfix);
+            if (IKG.setConstantsFromConfig())
+                IKG.setDefaultConstants();
+            IKG.getUserInputAndDeriveConstants();
+            IKG.generateFiles();
+            JOptionPane.showMessageDialog(null, ".scad files are generated!!", "Info", JOptionPane.INFORMATION_MESSAGE);
 
-                File[] filesList=new File(pathToRender).listFiles(new FilenameFilter() {
-                    @Override
-                    public boolean accept(File dir, String name) {
-                        return name.toLowerCase().endsWith(".scad");
-                    }
-                });
-
-                final GenerateStlService generateStlService=new GenerateStlService(pathToExe,filesList,keep);
-
-                Region veil=new Region();
-                veil.setPrefSize(400,400);
-                veil.setStyle("-fx-background-color: rgba(211,211,211,0.50)");
-                ProgressIndicator p=new ProgressIndicator();
-                p.setMaxSize(150,150);
-                p.progressProperty().bind(generateStlService.progressProperty());
-                veil.visibleProperty().bind(generateStlService.runningProperty());
-                p.visibleProperty().bind(generateStlService.runningProperty());
-                message.textProperty().bind(generateStlService.valueProperty());
-                stackPane.getChildren().addAll(veil,p);
-                generateStlService.start();
-
-            }
-            else {
-                JOptionPane.showMessageDialog(null,"openscad.exe does not exist!!" , "Warning", JOptionPane.WARNING_MESSAGE);
-            }
-        }
-        else{
-            JOptionPane.showMessageDialog(null,"Select render folder and OpenScad path!!" , "Warning", JOptionPane.WARNING_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, "Select render folder!!", "Warning", JOptionPane.WARNING_MESSAGE);
         }
 
-    }
-
-    private void generateStlFiles(File[] filesList,String pathToExe) {
-        Runtime rt = Runtime.getRuntime();
-
-        for (File file:filesList) {
-            message.setText("Generating "+file.getAbsolutePath().toLowerCase().replace(".scad",".stl"));
-            try {
-                Process p = rt.exec(pathToExe + " --export-format binstl -o " +
-                        file.getAbsolutePath().toLowerCase().replace(".scad",".stl")+ " "+file.getAbsolutePath());
-                int x = p.waitFor();
-
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
 
@@ -294,16 +285,67 @@ public class GUIController implements Initializable{
 
         fileChooser.setTitle("Where is OpenScad.exe?");
         File file = fileChooser.showOpenDialog(currentStage);
-        if (file!=null)
+        if (file != null)
             openscadPath.setText(file.getAbsolutePath());
     }
 
-    public void openOpuputDirectory(ActionEvent actionEvent) throws IOException {
+    public void openOutputDirectory(ActionEvent actionEvent) throws IOException {
         Runtime.getRuntime().exec("explorer.exe /open," + renderFolder.getText());
     }
 
     public void showLog(ActionEvent actionEvent) throws IOException {
-        File file=new File("log.txt");
-        Runtime.getRuntime().exec("explorer.exe /select, log.txt" );
+        File file = new File("log.txt");
+        Runtime.getRuntime().exec("explorer.exe /select, log.txt");
+    }
+
+    public void renderFiles(ActionEvent actionEvent) {
+        String pathToRender = renderFolder.getText().trim();
+        if (!renderFolder.getText().trim().equals("") && !openscadPath.getText().trim().equals("")) {
+            String pathToExe = openscadPath.getText().trim();
+
+            boolean keep = keepScad.isSelected();
+            File openScad = new File(pathToExe);
+            if (openScad.exists()) {
+                File[] stlFiles=new File(pathToRender).listFiles(new FilenameFilter() {
+                    @Override
+                    public boolean accept(File dir, String name) {
+                        return name.toLowerCase().endsWith(".stl");
+                    }
+                });
+
+                File[] scadFilesList = new File(pathToRender).listFiles(new FilenameFilter() {
+                    @Override
+                    public boolean accept(File dir, String name) {
+                        return name.toLowerCase().endsWith(".scad");
+                    }
+                });
+
+                ArrayList<File> filesList=new ArrayList<>();
+                for (File scadFile:scadFilesList) {
+                    if (! new File(scadFile.getAbsolutePath().replace(".scad",".stl")).exists()){
+                        filesList.add(scadFile);
+                    }
+                }
+
+
+                final GenerateStlService generateStlService = new GenerateStlService(pathToExe, filesList, keep);
+
+                Region veil = new Region();
+                veil.setPrefSize(400, 400);
+                veil.setStyle("-fx-background-color: rgba(211,211,211,0.50)");
+                ProgressIndicator p = new ProgressIndicator();
+                p.setMaxSize(150, 150);
+                p.progressProperty().bind(generateStlService.progressProperty());
+                veil.visibleProperty().bind(generateStlService.runningProperty());
+                p.visibleProperty().bind(generateStlService.runningProperty());
+                message.textProperty().bind(generateStlService.valueProperty());
+                stackPane.getChildren().addAll(veil, p);
+                generateStlService.start();
+            } else {
+                JOptionPane.showMessageDialog(null, "openscad.exe does not exist!!", "Warning", JOptionPane.WARNING_MESSAGE);
+            }
+        } else {
+            JOptionPane.showMessageDialog(null, "Select render folder and OpenScad path!!", "Warning", JOptionPane.WARNING_MESSAGE);
+        }
     }
 }

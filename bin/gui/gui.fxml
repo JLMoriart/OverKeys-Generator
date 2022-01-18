@@ -1,22 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.text.Font?>
-<StackPane fx:id="stackPane" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.GUIController">
+
+<StackPane fx:id="stackPane" prefHeight="677.0" prefWidth="782.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.GUIController">
    <children>
-      <GridPane fx:id="mainPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0">
+      <GridPane fx:id="mainPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="682.0" prefWidth="783.0">
           <columnConstraints>
               <ColumnConstraints hgrow="SOMETIMES" maxWidth="359.20001220703125" minWidth="10.0" prefWidth="304.0" />
               <ColumnConstraints hgrow="SOMETIMES" maxWidth="424.0" minWidth="10.0" prefWidth="366.4" />
           </columnConstraints>
           <rowConstraints>
-              <RowConstraints maxHeight="295.6000122070312" minHeight="10.0" prefHeight="264.6000122070312" vgrow="SOMETIMES" />
-              <RowConstraints maxHeight="338.19999999999993" minHeight="10.0" prefHeight="334.9999877929687" vgrow="SOMETIMES" />
+              <RowConstraints maxHeight="347.1999877929687" minHeight="10.0" prefHeight="309.2" vgrow="SOMETIMES" />
+              <RowConstraints maxHeight="390.3999999999999" minHeight="10.0" prefHeight="390.3999999999999" vgrow="SOMETIMES" />
           </rowConstraints>
           <children>
-              <Pane prefHeight="200.0" prefWidth="320.0">
+              <Pane prefHeight="310.0" prefWidth="360.0">
                   <children>
                       <Label layoutX="27.0" text="Measurements (mm)" underline="true">
                           <font>
@@ -41,7 +51,7 @@
                       <Insets top="10.0" />
                   </GridPane.margin>
               </Pane>
-              <Pane prefHeight="262.0" prefWidth="417.0" GridPane.columnIndex="1">
+              <Pane prefHeight="307.0" prefWidth="422.0" GridPane.columnIndex="1">
                   <children>
                       <Label layoutX="25.0" text="Isomorphic Settings" underline="true">
                           <font>
@@ -60,12 +70,18 @@
                       <Label layoutX="25.0" layoutY="178.0" text="Range :" />
                       <TextField fx:id="startingKey" layoutX="240.0" layoutY="214.0" />
                       <Label layoutX="25.0" layoutY="218.0" text="Starting Key :" />
+                  <RadioButton fx:id="shiftXtrue" layoutX="21.0" layoutY="254.0" mnemonicParsing="false" selected="true" text="Flat-up hexagons">
+                     <toggleGroup>
+                        <ToggleGroup fx:id="Group1" />
+                     </toggleGroup>
+                  </RadioButton>
+                  <RadioButton fx:id="shiftXfalse" layoutX="190.0" layoutY="254.0" mnemonicParsing="false" text="Pointy-up hexagons" toggleGroup="$Group1" />
                   </children>
                   <GridPane.margin>
                       <Insets top="10.0" />
                   </GridPane.margin>
               </Pane>
-              <Pane prefHeight="200.0" prefWidth="200.0" GridPane.rowIndex="1">
+              <Pane prefHeight="358.0" prefWidth="358.0" GridPane.rowIndex="1">
                   <children>
                       <Label layoutX="31.0" layoutY="33.0" text="Gaps/Tolerances" underline="true">
                           <font>
@@ -82,23 +98,25 @@
                       <Label layoutX="33.0" layoutY="173.0" text="Keytop Y Gap :" />
                       <TextField fx:id="underkeyGap" layoutX="179.0" layoutY="207.0" />
                       <Label layoutX="33.0" layoutY="211.0" text="Under-key Gap :" />
+                  <CheckBox fx:id="roughRender" layoutX="31.0" layoutY="247.0" mnemonicParsing="false" text="Low Poly" />
                   </children>
               </Pane>
-              <Pane prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+              <Pane prefHeight="313.0" prefWidth="425.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
                   <children>
                       <Button fx:id="save" layoutX="55.0" layoutY="36.0" mnemonicParsing="false" onAction="#savePreset" prefHeight="40.0" prefWidth="131.0" style="-fx-background-color: #79d579;" text="Save as preset..." />
                       <Button fx:id="load" layoutX="218.0" layoutY="36.0" mnemonicParsing="false" onAction="#loadPreset" prefHeight="40.0" prefWidth="130.0" style="-fx-background-color: #f3f39f;" text="Load preset..." />
                       <Label layoutX="23.0" layoutY="97.0" text="Render to :" />
-                      <Button layoutX="52.0" layoutY="167.0" mnemonicParsing="false" onAction="#renderFiles" prefHeight="40.0" prefWidth="146.0" style="-fx-background-color: #79b5d5;" text="Render and save .stl files" />
-                      <CheckBox fx:id="keepScad" layoutX="226.0" layoutY="178.0" mnemonicParsing="false" text="Keep .scad files" />
-                      <Button layoutX="54.0" layoutY="225.0" mnemonicParsing="false" onAction="#openOpuputDirectory" prefHeight="40.0" prefWidth="323.0" style="-fx-background-color: #79d579;" text="Open output directory" />
-                      <Button layoutX="54.0" layoutY="281.0" mnemonicParsing="false" prefHeight="40.0" prefWidth="323.0" style="-fx-background-color: #ee9696;" text="Show log" onAction="#showLog"/>
+                      <Button layoutX="14.0" layoutY="182.0" mnemonicParsing="false" onAction="#generateFiles" prefHeight="40.0" prefWidth="130.0" style="-fx-background-color: #79b5d5;" text="Generate .scad files" />
+                      <CheckBox fx:id="keepScad" layoutX="307.0" layoutY="194.0" mnemonicParsing="false" text="Keep .scad files" />
+                      <Button layoutX="54.0" layoutY="245.0" mnemonicParsing="false" onAction="#openOutputDirectory" prefHeight="40.0" prefWidth="323.0" style="-fx-background-color: #79d579;" text="Open output directory" />
+                      <Button layoutX="54.0" layoutY="301.0" mnemonicParsing="false" onAction="#showLog" prefHeight="40.0" prefWidth="323.0" style="-fx-background-color: #ee9696;" text="Show log" />
                   <TextField fx:id="renderFolder" layoutX="148.0" layoutY="93.0" prefHeight="25.0" prefWidth="190.0" />
                   <Button layoutX="348.0" layoutY="93.0" mnemonicParsing="false" onAction="#browse" text="Browse..." />
                   <Label layoutX="23.0" layoutY="136.0" text="OpenSCAD path :" />
                   <TextField fx:id="openscadPath" layoutX="148.0" layoutY="132.0" prefHeight="25.0" prefWidth="190.0" />
                   <Button layoutX="348.0" layoutY="132.0" mnemonicParsing="false" onAction="#browseOpenscad" text="Browse..." />
                   <Label fx:id="message" layoutX="27.0" layoutY="6.0" prefHeight="17.0" prefWidth="381.0" style="-fx-text-fill: GREEN;" />
+                  <Button layoutX="166.0" layoutY="182.0" mnemonicParsing="false" onAction="#renderFiles" prefHeight="40.0" prefWidth="131.0" style="-fx-background-color: #f3f39f;" text="Render .stl files" />
                   </children>
               </Pane>
           </children>

@@ -11,7 +11,7 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("gui.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 820, 600);
+        Scene scene = new Scene(fxmlLoader.load(), 820, 700);
         stage.setTitle("OverKeys Generator");
         stage.setScene(scene);
 

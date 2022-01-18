@@ -9,7 +9,9 @@ blackKeyLength::100.0
 whiteKeyLength::148.0
 metalRoundRadius::2.5
 stalkFitYTolerance::0.2
+shiftXtrue::1
 halfStepsToLargeMOSStep::1
+roughRender::1
 halfStepsToPeriod::2
 range::12
 startingKey::5

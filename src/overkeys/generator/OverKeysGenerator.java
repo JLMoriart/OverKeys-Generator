@@ -24,7 +24,7 @@ public class OverKeysGenerator {
     ArrayList<mosScale> mosTracker = new ArrayList<>();
 
     String renderPath;
-
+    String filepostfix="";
 
     public static void main(String[] args) {
         OverKeysGenerator IKG = new OverKeysGenerator();
@@ -38,10 +38,13 @@ public class OverKeysGenerator {
     public void setRenderPath(String renderPath){
         this.renderPath=renderPath;
     }
+    public void setFilepostfix(String postfix){
+        this.filepostfix=postfix;
+    }
 
     public boolean setConstantsFromConfig() {
 
-        Map<String,Double> values=new HashMap<String ,Double>();
+        Map<String,Double> values=new HashMap<>();
         try (Scanner sc = new Scanner(new File("./resources/config.txt"))) {
             while (sc.hasNextLine()) {
                 String line = sc.nextLine();
@@ -69,6 +72,8 @@ public class OverKeysGenerator {
             startingKey=(int) Math.round(values.get("startingKey"));
             stepsForLarge=(int) Math.round(values.get("halfStepsToLargeMOSStep"));
 
+            shiftXTrue = (int) Math.round(values.get("shiftXtrue")) == 1;
+            roughRender = (int) Math.round(values.get("roughRender")) == 1;
             return false;
 
         } catch (FileNotFoundException | NumberFormatException ex) {
@@ -109,19 +114,21 @@ public class OverKeysGenerator {
 
         underKeyGap = 0.46875;
 
+        shiftXTrue = false;//if not, shift Y. This is terrible variable naming
+        roughRender = false;
+
         renderPath="C:\\Users\\JLMor\\Desktop\\OPENSCAD_DUMP";
     }
 
     public void getUserInputAndDeriveConstants() {
 
 
-        roughRender = false;
+
         keytopsInSingleKeyFiles = false;
         keytopsInTogether = true;
 
         verticalFlip = false;//don't think I touch this anymore
 
-        shiftXTrue = false;//if not, shift Y. This is terrible variable naming
 
 
         periodWidth = octaveWidth / 12 * periodSteps;
@@ -206,17 +213,17 @@ public class OverKeysGenerator {
     public void generateFiles() {
         int currentPianoKey, currentGenerator;
 
-        File together = new File(this.renderPath+"\\together.scad");//together is the big collection of keys and keytops that will show if everything worked correctly
+        File together = new File(this.renderPath+"\\together"+filepostfix+".scad");//together is the big collection of keys and keytops that will show if everything worked correctly
         together.getParentFile().mkdirs();
         try {
             togetherPrint = new PrintWriter(together, "UTF-8");
         } catch (Exception e) {
             System.out.println(e);
         }
-        togetherPrint.println("include<values.scad>;");
+        togetherPrint.println("include<values"+filepostfix+".scad>;");
 
 
-        File values = new File(this.renderPath+"\\values.scad");
+        File values = new File(this.renderPath+"\\values"+filepostfix+".scad");
         values.getParentFile().mkdirs();
         try {
             pwValues = new PrintWriter(values, "UTF-8");
@@ -239,22 +246,22 @@ public class OverKeysGenerator {
             int keytopsNeeded = (desiredGamut - currentGenerator - 1) / periodSteps + 1;//-1 then plus one because if desiredGamut-currentGenerator)=periodSteps, I want it to return 1?
 
             try {
-                File file2 = new File(this.renderPath+"\\" + i + "_" + currentGenerator + ".scad");
+                File file2 = new File(this.renderPath+"\\" + i + "_" + currentGenerator +filepostfix+ ".scad");
                 file2.getParentFile().mkdirs();
                 pw = new PrintWriter(file2, "UTF-8");
 
-                togetherPrint.println("use<" + i + "_" + currentGenerator + ".scad>;");
+                togetherPrint.println("use<" + i + "_" + currentGenerator +filepostfix+ ".scad>;");
 
                 togetherPrint.println("translate([-" + (i * octaveWidth / 12) + ",0,0");
 
                 togetherPrint.println("])");
 
-                togetherPrint.println(i + "_" + currentGenerator + "(" + keytopsInTogether + ");");
+                togetherPrint.println(i + "_" + currentGenerator +filepostfix+ "(" + keytopsInTogether+ ");");
 
-                pw.println("use<keytop.scad>");
-                pw.println("include<values.scad>");
-                pw.println(i + "_" + currentGenerator + "();");
-                pw.println("module " + i + "_" + currentGenerator + "(keytops=" + keytopsInSingleKeyFiles + "){");
+                pw.println("use<keytop"+filepostfix+".scad>");
+                pw.println("include<values"+filepostfix+".scad>");
+                pw.println(i + "_" + currentGenerator+filepostfix + "();");
+                pw.println("module " + i + "_" + currentGenerator +filepostfix+ "(keytops=" + keytopsInSingleKeyFiles + "){");
 
                 createMainBase(currentGenerator, keytopsNeeded, i, currentPianoKey);
                 createKeyStalks(currentGenerator, keytopsNeeded, currentPianoKey);
@@ -599,11 +606,11 @@ public class OverKeysGenerator {
 
     public void createKeytop() {
         try {
-            File file = new File(renderPath+"\\keytop.scad");
+            File file = new File(renderPath+"\\keytop"+filepostfix+".scad");
             file.getParentFile().mkdirs();
             pwKeyTop = new PrintWriter(file, "UTF-8");
 
-            pwKeyTop.println("include<values.scad>;");
+            pwKeyTop.println("include<values"+filepostfix+".scad>;");
             pwKeyTop.println("keytop();");
             pwKeyTop.println("");
 

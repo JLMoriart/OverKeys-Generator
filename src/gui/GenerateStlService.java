@@ -9,10 +9,10 @@ import java.util.ArrayList;
 public class GenerateStlService extends Service<String> {
 
     private String pathToExe;
-    private ArrayList<File> filesList;
+    private File[] filesList;
     boolean keep;
 
-    public GenerateStlService(String pathToExe, ArrayList<File> filesList, boolean keep) {
+    public GenerateStlService(String pathToExe, File[] filesList, boolean keep) {
         this.pathToExe=pathToExe;
         this.filesList=filesList;
         this.keep=keep;

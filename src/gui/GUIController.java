@@ -19,9 +19,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.text.DateFormat;
-import java.text.Format;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 
@@ -124,20 +122,18 @@ public class GUIController implements Initializable {
     void loadScreenData(File file) {
         Map<String, String> values = readFromFile(file);
         for (String key : values.keySet()) {
-            if (key.equals("shiftXtrue")){
-                if (Integer.parseInt(values.get(key))==1)
+            if (key.equals("shiftXtrue")) {
+                if (Integer.parseInt(values.get(key)) == 1)
                     shiftXtrue.setSelected(true);
                 else
                     shiftXfalse.setSelected(true);
-            }
-            else {
-                if (key.equals("roughRender")){
-                    if (Integer.parseInt(values.get(key))==1)
+            } else {
+                if (key.equals("roughRender")) {
+                    if (Integer.parseInt(values.get(key)) == 1)
                         roughRender.setSelected(true);
                     else
-                        roughRender.setSelected(true);
-                }
-                 else {
+                        roughRender.setSelected(false);
+                } else {
                     TextField field = (TextField) mainPane.getScene().lookup("#" + key);
                     field.setText(values.get(key));
                 }
@@ -153,8 +149,52 @@ public class GUIController implements Initializable {
 
     @FXML
     void savePreset(ActionEvent event) {
-        Map<String, Double> doubleValues = new HashMap<>();
+        Map<String, Double> doubleValues = getDoubleValues();
+        Map<String, Integer> intValues = getIntValues();
+
+        FileChooser fileChooser = new FileChooser();
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("TXT files (*.txt)", "*.txt");
+        fileChooser.getExtensionFilters().add(extFilter);
+
+        Node node = (Node) event.getSource();
+        Stage currentStage = (Stage) node.getScene().getWindow();
+
+        File file = fileChooser.showSaveDialog(currentStage);
+
+        if (file != null) {
+            saveToFile(doubleValues, intValues, file);
+        }
+
+    }
+
+    private Map<String, Integer> getIntValues() {
+
         Map<String, Integer> intValues = new HashMap<>();
+        try {
+            intValues.put("halfStepsToPeriod", Integer.parseInt(halfStepsToPeriod.getText()));
+            intValues.put("halfStepsToGenerator", Integer.parseInt(halfStepsToGenerator.getText()));
+            intValues.put("halfStepsToLargeMOSStep", Integer.parseInt(halfStepsToLargeMOSStep.getText()));
+            intValues.put("gamut", Integer.parseInt(gamut.getText()));
+            intValues.put("range", Integer.parseInt(range.getText()));
+            intValues.put("startingKey", Integer.parseInt(startingKey.getText()));
+            if (shiftXtrue.isSelected()) {
+                intValues.put("shiftXtrue", 1);
+            } else {
+                intValues.put("shiftXtrue", 0);
+            }
+            if (roughRender.isSelected()) {
+                intValues.put("roughRender", 1);
+            } else {
+                intValues.put("roughRender", 0);
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, e, "Error", JOptionPane.ERROR_MESSAGE);
+        }
+        return intValues;
+    }
+
+    private Map<String, Double> getDoubleValues() {
+        Map<String, Double> doubleValues = new HashMap<>();
         try {
             doubleValues.put("octaveWidth", Double.parseDouble(octaveWidth.getText()));
             doubleValues.put("blackKeyHeight", Double.parseDouble(blackKeyHeight.getText()));
@@ -168,41 +208,10 @@ public class GUIController implements Initializable {
             doubleValues.put("keytopXGap", Double.parseDouble(keytopXGap.getText()));
             doubleValues.put("keytopYGap", Double.parseDouble(keytopYGap.getText()));
             doubleValues.put("underkeyGap", Double.parseDouble(underkeyGap.getText()));
-
-            intValues.put("halfStepsToPeriod", Integer.parseInt(halfStepsToPeriod.getText()));
-            intValues.put("halfStepsToGenerator", Integer.parseInt(halfStepsToGenerator.getText()));
-            intValues.put("halfStepsToLargeMOSStep", Integer.parseInt(halfStepsToLargeMOSStep.getText()));
-            intValues.put("gamut", Integer.parseInt(gamut.getText()));
-            intValues.put("range", Integer.parseInt(range.getText()));
-            intValues.put("startingKey", Integer.parseInt(startingKey.getText()));
-            if (shiftXtrue.isSelected()){
-                intValues.put("shiftXtrue",1);
-            }
-            else {
-                intValues.put("shiftXtrue",0);
-            }
-            if (roughRender.isSelected()){
-                intValues.put("roughRender",1);
-            }
-            else {
-                intValues.put("roughRender",0);
-            }
-            FileChooser fileChooser = new FileChooser();
-            FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("TXT files (*.txt)", "*.txt");
-            fileChooser.getExtensionFilters().add(extFilter);
-
-            Node node = (Node) event.getSource();
-            Stage currentStage = (Stage) node.getScene().getWindow();
-
-            File file = fileChooser.showSaveDialog(currentStage);
-
-            if (file != null) {
-                saveToFile(doubleValues, intValues, file);
-            }
-
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(null, e, "Error", JOptionPane.ERROR_MESSAGE);
         }
+        return doubleValues;
     }
 
     private void saveToFile(Map<String, Double> doubleValues, Map<String, Integer> intValues, File file) {
@@ -215,6 +224,21 @@ public class GUIController implements Initializable {
                 writer.println(key + SEPARATOR + intValues.get(key));
             writer.close();
             Files.copy(file.toPath(), (new File("./resources/config.txt").toPath()), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(null, ex, "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
+    }
+
+    private void saveToConfig(Map<String, Double> doubleValues, Map<String, Integer> intValues) {
+        try {
+            PrintWriter writer;
+            writer = new PrintWriter(new File("./resources/config.txt"));
+            for (String key : doubleValues.keySet())
+                writer.println(key + SEPARATOR + doubleValues.get(key));
+            for (String key : intValues.keySet())
+                writer.println(key + SEPARATOR + intValues.get(key));
+            writer.close();
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(null, ex, "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -249,18 +273,16 @@ public class GUIController implements Initializable {
     }
 
     public void generateFiles(ActionEvent actionEvent) {
+
+        Map<String, Double> doubleValues = getDoubleValues();
+        Map<String, Integer> intValues = getIntValues();
+
         OverKeysGenerator IKG = new OverKeysGenerator();
 
         if (!renderFolder.getText().trim().equals("")) {
 
-            Date date=new Date();
-            DateFormat dateFormat = new SimpleDateFormat("yyyyMMddhhmmss");
-            String filepostfix = dateFormat.format(date);
-
             IKG.setRenderPath(renderFolder.getText());
-            IKG.setFilepostfix("_"+filepostfix);
-            if (IKG.setConstantsFromConfig())
-                IKG.setDefaultConstants();
+            IKG.setConstantsFromLists(doubleValues,intValues);
             IKG.getUserInputAndDeriveConstants();
             IKG.generateFiles();
             JOptionPane.showMessageDialog(null, ".scad files are generated!!", "Info", JOptionPane.INFORMATION_MESSAGE);
@@ -306,13 +328,6 @@ public class GUIController implements Initializable {
             boolean keep = keepScad.isSelected();
             File openScad = new File(pathToExe);
             if (openScad.exists()) {
-                File[] stlFiles=new File(pathToRender).listFiles(new FilenameFilter() {
-                    @Override
-                    public boolean accept(File dir, String name) {
-                        return name.toLowerCase().endsWith(".stl");
-                    }
-                });
-
                 File[] scadFilesList = new File(pathToRender).listFiles(new FilenameFilter() {
                     @Override
                     public boolean accept(File dir, String name) {
@@ -320,15 +335,7 @@ public class GUIController implements Initializable {
                     }
                 });
 
-                ArrayList<File> filesList=new ArrayList<>();
-                for (File scadFile:scadFilesList) {
-                    if (! new File(scadFile.getAbsolutePath().replace(".scad",".stl")).exists()){
-                        filesList.add(scadFile);
-                    }
-                }
-
-
-                final GenerateStlService generateStlService = new GenerateStlService(pathToExe, filesList, keep);
+                final GenerateStlService generateStlService = new GenerateStlService(pathToExe, scadFilesList, keep);
 
                 Region veil = new Region();
                 veil.setPrefSize(400, 400);

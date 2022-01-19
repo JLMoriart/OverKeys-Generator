@@ -24,7 +24,7 @@ public class OverKeysGenerator {
     ArrayList<mosScale> mosTracker = new ArrayList<>();
 
     String renderPath;
-    String filepostfix="";
+
 
     public static void main(String[] args) {
         OverKeysGenerator IKG = new OverKeysGenerator();
@@ -38,9 +38,7 @@ public class OverKeysGenerator {
     public void setRenderPath(String renderPath){
         this.renderPath=renderPath;
     }
-    public void setFilepostfix(String postfix){
-        this.filepostfix=postfix;
-    }
+
 
     public boolean setConstantsFromConfig() {
 
@@ -74,12 +72,46 @@ public class OverKeysGenerator {
 
             shiftXTrue = (int) Math.round(values.get("shiftXtrue")) == 1;
             roughRender = (int) Math.round(values.get("roughRender")) == 1;
-            return false;
+            return true;
 
         } catch (FileNotFoundException | NumberFormatException ex) {
             //config file does not exist- return false to load default constants
             System.out.println("preset file does not exist or corrupted. Default constants loaded");
+            return false;
+        }
+
+    }
+
+    public boolean setConstantsFromLists(Map<String, Double> doubleValues, Map<String, Integer> intValues) {
+
+        try{
+            octaveWidth=doubleValues.get("octaveWidth");
+            blackKeyHeight=doubleValues.get("blackKeyHeight");
+            blackKeyLength=doubleValues.get("blackKeyLength");
+            whiteKeyLengthPreShortening=doubleValues.get("whiteKeyLength");
+            keytopHeightDifference=doubleValues.get("keytopHeightDiff");
+            metalRoundRadius=doubleValues.get("metalRoundRadius");
+            xToleranceGap=doubleValues.get("stalkFitXTolerance");
+            yToleranceGap=doubleValues.get("stalkFitYTolerance");
+            hGap=doubleValues.get("keytopXGap");
+            vGap=doubleValues.get("keytopYGap");
+            underKeyGap=doubleValues.get("underkeyGap");
+
+
+            periodSteps= Math.round(intValues.get("halfStepsToPeriod"));
+            generatorSteps=Math.round(intValues.get("halfStepsToGenerator"));
+            desiredGamut= Math.round(intValues.get("gamut"));
+            range= Math.round(intValues.get("range"));
+            startingKey= Math.round(intValues.get("startingKey"));
+            stepsForLarge= Math.round(intValues.get("halfStepsToLargeMOSStep"));
+
+            shiftXTrue =  Math.round(intValues.get("shiftXtrue")) == 1;
+            roughRender =  Math.round(intValues.get("roughRender")) == 1;
             return true;
+
+        } catch (NumberFormatException ex) {
+
+            return false;
         }
 
     }
@@ -213,17 +245,17 @@ public class OverKeysGenerator {
     public void generateFiles() {
         int currentPianoKey, currentGenerator;
 
-        File together = new File(this.renderPath+"\\together"+filepostfix+".scad");//together is the big collection of keys and keytops that will show if everything worked correctly
+        File together = new File(this.renderPath+"\\together.scad");//together is the big collection of keys and keytops that will show if everything worked correctly
         together.getParentFile().mkdirs();
         try {
             togetherPrint = new PrintWriter(together, "UTF-8");
         } catch (Exception e) {
             System.out.println(e);
         }
-        togetherPrint.println("include<values"+filepostfix+".scad>;");
+        togetherPrint.println("include<values.scad>;");
 
 
-        File values = new File(this.renderPath+"\\values"+filepostfix+".scad");
+        File values = new File(this.renderPath+"\\values.scad");
         values.getParentFile().mkdirs();
         try {
             pwValues = new PrintWriter(values, "UTF-8");
@@ -246,22 +278,22 @@ public class OverKeysGenerator {
             int keytopsNeeded = (desiredGamut - currentGenerator - 1) / periodSteps + 1;//-1 then plus one because if desiredGamut-currentGenerator)=periodSteps, I want it to return 1?
 
             try {
-                File file2 = new File(this.renderPath+"\\" + i + "_" + currentGenerator +filepostfix+ ".scad");
+                File file2 = new File(this.renderPath+"\\" + i + "_" + currentGenerator+ ".scad");
                 file2.getParentFile().mkdirs();
                 pw = new PrintWriter(file2, "UTF-8");
 
-                togetherPrint.println("use<" + i + "_" + currentGenerator +filepostfix+ ".scad>;");
+                togetherPrint.println("use<" + i + "_" + currentGenerator + ".scad>;");
 
                 togetherPrint.println("translate([-" + (i * octaveWidth / 12) + ",0,0");
 
                 togetherPrint.println("])");
 
-                togetherPrint.println(i + "_" + currentGenerator +filepostfix+ "(" + keytopsInTogether+ ");");
+                togetherPrint.println(i + "_" + currentGenerator + "(" + keytopsInTogether+ ");");
 
-                pw.println("use<keytop"+filepostfix+".scad>");
-                pw.println("include<values"+filepostfix+".scad>");
-                pw.println(i + "_" + currentGenerator+filepostfix + "();");
-                pw.println("module " + i + "_" + currentGenerator +filepostfix+ "(keytops=" + keytopsInSingleKeyFiles + "){");
+                pw.println("use<keytop.scad>");
+                pw.println("include<values.scad>");
+                pw.println(i + "_" + currentGenerator + "();");
+                pw.println("module " + i + "_" + currentGenerator + "(keytops=" + keytopsInSingleKeyFiles + "){");
 
                 createMainBase(currentGenerator, keytopsNeeded, i, currentPianoKey);
                 createKeyStalks(currentGenerator, keytopsNeeded, currentPianoKey);
@@ -606,11 +638,11 @@ public class OverKeysGenerator {
 
     public void createKeytop() {
         try {
-            File file = new File(renderPath+"\\keytop"+filepostfix+".scad");
+            File file = new File(renderPath+"\\keytop.scad");
             file.getParentFile().mkdirs();
             pwKeyTop = new PrintWriter(file, "UTF-8");
 
-            pwKeyTop.println("include<values"+filepostfix+".scad>;");
+            pwKeyTop.println("include<values.scad>;");
             pwKeyTop.println("keytop();");
             pwKeyTop.println("");
 

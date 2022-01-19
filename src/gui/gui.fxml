@@ -103,20 +103,20 @@
               </Pane>
               <Pane prefHeight="313.0" prefWidth="425.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
                   <children>
-                      <Button fx:id="save" layoutX="55.0" layoutY="36.0" mnemonicParsing="false" onAction="#savePreset" prefHeight="40.0" prefWidth="131.0" style="-fx-background-color: #79d579;" text="Save as preset..." />
-                      <Button fx:id="load" layoutX="218.0" layoutY="36.0" mnemonicParsing="false" onAction="#loadPreset" prefHeight="40.0" prefWidth="130.0" style="-fx-background-color: #f3f39f;" text="Load preset..." />
-                      <Label layoutX="23.0" layoutY="97.0" text="Render to :" />
-                      <Button layoutX="14.0" layoutY="182.0" mnemonicParsing="false" onAction="#generateFiles" prefHeight="40.0" prefWidth="130.0" style="-fx-background-color: #79b5d5;" text="Generate .scad files" />
-                      <CheckBox fx:id="keepScad" layoutX="307.0" layoutY="194.0" mnemonicParsing="false" text="Keep .scad files" />
-                      <Button layoutX="54.0" layoutY="245.0" mnemonicParsing="false" onAction="#openOutputDirectory" prefHeight="40.0" prefWidth="323.0" style="-fx-background-color: #79d579;" text="Open output directory" />
-                      <Button layoutX="54.0" layoutY="301.0" mnemonicParsing="false" onAction="#showLog" prefHeight="40.0" prefWidth="323.0" style="-fx-background-color: #ee9696;" text="Show log" />
-                  <TextField fx:id="renderFolder" layoutX="148.0" layoutY="93.0" prefHeight="25.0" prefWidth="190.0" />
-                  <Button layoutX="348.0" layoutY="93.0" mnemonicParsing="false" onAction="#browse" text="Browse..." />
-                  <Label layoutX="23.0" layoutY="136.0" text="OpenSCAD path :" />
-                  <TextField fx:id="openscadPath" layoutX="148.0" layoutY="132.0" prefHeight="25.0" prefWidth="190.0" />
-                  <Button layoutX="348.0" layoutY="132.0" mnemonicParsing="false" onAction="#browseOpenscad" text="Browse..." />
-                  <Label fx:id="message" layoutX="27.0" layoutY="6.0" prefHeight="17.0" prefWidth="381.0" style="-fx-text-fill: GREEN;" />
-                  <Button layoutX="166.0" layoutY="182.0" mnemonicParsing="false" onAction="#renderFiles" prefHeight="40.0" prefWidth="131.0" style="-fx-background-color: #f3f39f;" text="Render .stl files" />
+                      <Button fx:id="save" layoutX="55.0" layoutY="49.0" mnemonicParsing="false" onAction="#savePreset" prefHeight="40.0" prefWidth="131.0" style="-fx-background-color: #79d579;" text="Save as preset..." />
+                      <Button fx:id="load" layoutX="218.0" layoutY="49.0" mnemonicParsing="false" onAction="#loadPreset" prefHeight="40.0" prefWidth="130.0" style="-fx-background-color: #f3f39f;" text="Load preset..." />
+                      <Label layoutX="22.0" layoutY="115.0" text="Render to :" />
+                      <Button layoutX="13.0" layoutY="200.0" mnemonicParsing="false" onAction="#generateFiles" prefHeight="40.0" prefWidth="130.0" style="-fx-background-color: #79b5d5;" text="Generate .scad files" />
+                      <CheckBox fx:id="keepScad" layoutX="306.0" layoutY="212.0" mnemonicParsing="false" text="Keep .scad files" />
+                      <Button layoutX="53.0" layoutY="263.0" mnemonicParsing="false" onAction="#openOutputDirectory" prefHeight="40.0" prefWidth="323.0" style="-fx-background-color: #79d579;" text="Open output directory" />
+                      <Button layoutX="53.0" layoutY="319.0" mnemonicParsing="false" onAction="#showLog" prefHeight="40.0" prefWidth="323.0" style="-fx-background-color: #ee9696;" text="Show log" />
+                  <TextField fx:id="renderFolder" layoutX="147.0" layoutY="111.0" prefHeight="25.0" prefWidth="190.0" />
+                  <Button layoutX="347.0" layoutY="111.0" mnemonicParsing="false" onAction="#browse" text="Browse..." />
+                  <Label layoutX="22.0" layoutY="154.0" text="OpenSCAD path :" />
+                  <TextField fx:id="openscadPath" layoutX="147.0" layoutY="150.0" prefHeight="25.0" prefWidth="190.0" />
+                  <Button layoutX="347.0" layoutY="150.0" mnemonicParsing="false" onAction="#browseOpenscad" text="Browse..." />
+                  <Label fx:id="message" layoutX="27.0" layoutY="6.0" prefHeight="40.0" prefWidth="381.0" style="-fx-text-fill: GREEN;" />
+                  <Button layoutX="165.0" layoutY="200.0" mnemonicParsing="false" onAction="#renderFiles" prefHeight="40.0" prefWidth="131.0" style="-fx-background-color: #f3f39f;" text="Render .stl files" />
                   </children>
               </Pane>
           </children>

@@ -879,7 +879,7 @@ public class OverKeysGenerator {
 
     public boolean checkCoprime(int per, int gen) {//make sure user input of generator generates entire gamut of periodSteps
         int current = gen;
-        boolean areCoprime = true;
+        boolean areCoprime = true;//
         for (int i = 0; i < per - 1; i++) {
             if (current == per) {
                 areCoprime = false;

@@ -5,12 +5,14 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
 import overkeys.generator.OverKeysGenerator;
 
 import javax.swing.*;
@@ -18,8 +20,6 @@ import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 
@@ -42,6 +42,11 @@ public class GUIController implements Initializable {
     public RadioButton shiftXfalse;
     public ToggleGroup Group1;
     public CheckBox roughRender;
+    public Slider shiftX;
+    public Slider shiftY;
+    public TextField shiftXValue;
+    public TextField shiftYValue;
+    public CheckBox verticalFlip;
 
     @FXML
     private TextField blackKeyHeight;
@@ -65,10 +70,8 @@ public class GUIController implements Initializable {
     private TextField keytopHeightDiff;
 
     @FXML
-    private TextField keytopXGap;
+    private TextField keytopScale;
 
-    @FXML
-    private TextField keytopYGap;
 
     @FXML
     private Button load;
@@ -102,6 +105,8 @@ public class GUIController implements Initializable {
 
     public static final String SEPARATOR = "::";
 
+    private OverKeysGenerator IKG;
+
     @FXML
     void loadPreset(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
@@ -122,29 +127,40 @@ public class GUIController implements Initializable {
     void loadScreenData(File file) {
         Map<String, String> values = readFromFile(file);
         for (String key : values.keySet()) {
-            if (key.equals("shiftXtrue")) {
-                if (Integer.parseInt(values.get(key)) == 1)
-                    shiftXtrue.setSelected(true);
-                else
-                    shiftXfalse.setSelected(true);
-            } else {
-                if (key.equals("roughRender")) {
+            switch (key){
+                case "shiftXtrue":
+                    if (Integer.parseInt(values.get(key)) == 1)
+                        shiftXtrue.setSelected(true);
+                    else
+                        shiftXfalse.setSelected(true);
+                    break;
+                case "roughRender":
                     if (Integer.parseInt(values.get(key)) == 1)
                         roughRender.setSelected(true);
                     else
                         roughRender.setSelected(false);
-                } else {
+                    break;
+                case "verticalFlip":
+                    if (Integer.parseInt(values.get(key)) == 1)
+                        verticalFlip.setSelected(true);
+                    else
+                        verticalFlip.setSelected(false);
+                    break;
+                case "shiftX":
+                    break;
+                case "shiftY":
+                    break;
+                default:
                     TextField field = (TextField) mainPane.getScene().lookup("#" + key);
                     field.setText(values.get(key));
-                }
             }
-
         }
         try {
             Files.copy(file.toPath(), (new File("./resources/config.txt").toPath()), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
 
     @FXML
@@ -187,6 +203,11 @@ public class GUIController implements Initializable {
             } else {
                 intValues.put("roughRender", 0);
             }
+            if (verticalFlip.isSelected()) {
+                intValues.put("verticalFlip", 1);
+            } else {
+                intValues.put("verticalFlip", 0);
+            }
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(null, e, "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -205,9 +226,12 @@ public class GUIController implements Initializable {
 
             doubleValues.put("stalkFitXTolerance", Double.parseDouble(stalkFitXTolerance.getText()));
             doubleValues.put("stalkFitYTolerance", Double.parseDouble(stalkFitYTolerance.getText()));
-            doubleValues.put("keytopXGap", Double.parseDouble(keytopXGap.getText()));
-            doubleValues.put("keytopYGap", Double.parseDouble(keytopYGap.getText()));
+            doubleValues.put("keytopScale", Double.parseDouble(keytopScale.getText()));
             doubleValues.put("underkeyGap", Double.parseDouble(underkeyGap.getText()));
+
+            doubleValues.put("shiftXValue",Double.parseDouble(shiftXValue.getText()));
+            doubleValues.put("shiftYValue",Double.parseDouble(shiftYValue.getText()));
+
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(null, e, "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -276,8 +300,11 @@ public class GUIController implements Initializable {
 
         Map<String, Double> doubleValues = getDoubleValues();
         Map<String, Integer> intValues = getIntValues();
+        IKG = new OverKeysGenerator();
+        IKG.setConstantsFromLists(doubleValues,intValues);
+        IKG.getUserInputAndDeriveConstants();
 
-        OverKeysGenerator IKG = new OverKeysGenerator();
+
 
         if (!renderFolder.getText().trim().equals("")) {
 
@@ -297,6 +324,28 @@ public class GUIController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 
+        BindSliderTextField(shiftXValue, shiftX);
+
+        BindSliderTextField(shiftYValue, shiftY);
+    }
+
+    private void BindSliderTextField(TextField shiftYValue, Slider shiftY) {
+        shiftYValue.textProperty().bindBidirectional(shiftY.valueProperty(), new StringConverter<Number>()
+        {
+            @Override
+            public String toString(Number t)
+            {
+                return t.toString();
+            }
+
+            @Override
+            public Number fromString(String string)
+            {
+                if (string.equals("")) return 0.0;
+                return Double.parseDouble(string);
+            }
+
+        });
     }
 
     public void browseOpenscad(ActionEvent actionEvent) {
@@ -355,4 +404,6 @@ public class GUIController implements Initializable {
             JOptionPane.showMessageDialog(null, "Select render folder and OpenScad path!!", "Warning", JOptionPane.WARNING_MESSAGE);
         }
     }
+
+
 }

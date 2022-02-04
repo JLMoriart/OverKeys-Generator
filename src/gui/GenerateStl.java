@@ -63,7 +63,9 @@ public class GenerateStl extends Task<String> {
 
         File[] fileList= new File(renderPath).listFiles();
         for (File file : fileList) {
-            file.renameTo(new File(newFolder.getAbsolutePath()+"\\"+file.getName()));
+            if (!file.isDirectory()) {
+                file.renameTo(new File(newFolder.getAbsolutePath() + "\\" + file.getName()));
+            }
         }
         return "Files are generated and moved to "+newFolder.getAbsolutePath();
     }

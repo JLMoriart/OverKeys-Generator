@@ -19,6 +19,7 @@ public class OverKeysGenerator {
     double metalRoundRadiusTolerance = 0.0125, underKeyGap;
     int periodSteps, generatorSteps, desiredGamut, startingKey, range, genForLargeStep, genForSmallStep, stepsForLarge, stepsForSmall, genForStep1, genForStep1b;
     boolean isKeytop, verticalFlip, neededAbsoluteValue = false, manualKeyFlip, shiftXTrue, roughRender, keytopsInTogether, keytopsInSingleKeyFiles;
+    double xSliderValue,ySliderValue;
 
     ArrayList<Integer> mosSizes = new ArrayList<>();
     ArrayList<mosScale> mosTracker = new ArrayList<>();
@@ -58,10 +59,12 @@ public class OverKeysGenerator {
             metalRoundRadius=values.get("metalRoundRadius");
             xToleranceGap=values.get("stalkFitXTolerance");
             yToleranceGap=values.get("stalkFitYTolerance");
-            hGap=values.get("keytopXGap");
-            vGap=values.get("keytopYGap");
+            //hGap=values.get("keytopXGap");
+            //vGap=values.get("keytopYGap");
+            keyScale=values.get("keytopScale");
             underKeyGap=values.get("underkeyGap");
-
+            xSliderValue=values.get("shiftXValue");
+            ySliderValue=values.get("shiftYValue");
 
             periodSteps= (int) Math.round(values.get("halfStepsToPeriod"));
             generatorSteps=(int) Math.round(values.get("halfStepsToGenerator"));
@@ -93,9 +96,12 @@ public class OverKeysGenerator {
             metalRoundRadius=doubleValues.get("metalRoundRadius");
             xToleranceGap=doubleValues.get("stalkFitXTolerance");
             yToleranceGap=doubleValues.get("stalkFitYTolerance");
-            hGap=doubleValues.get("keytopXGap");
-            vGap=doubleValues.get("keytopYGap");
+            //hGap=doubleValues.get("keytopXGap");
+            //vGap=doubleValues.get("keytopYGap");
+            keyScale=doubleValues.get("keytopScale");
             underKeyGap=doubleValues.get("underkeyGap");
+            xSliderValue=doubleValues.get("shiftXValue");
+            ySliderValue=doubleValues.get("shiftYValue");
 
 
             periodSteps= Math.round(intValues.get("halfStepsToPeriod"));
@@ -107,6 +113,8 @@ public class OverKeysGenerator {
 
             shiftXTrue =  Math.round(intValues.get("shiftXtrue")) == 1;
             roughRender =  Math.round(intValues.get("roughRender")) == 1;
+            verticalFlip =  Math.round(intValues.get("verticalFlip")) == 1;
+            manualKeyFlip = verticalFlip;
             return true;
 
         } catch (NumberFormatException ex) {
@@ -144,6 +152,8 @@ public class OverKeysGenerator {
         hGap = 3;//2.125;
         vGap = 0.5;
 
+        keyScale=0.875;
+
         underKeyGap = 0.46875;
 
         shiftXTrue = true;//if not, shift Y. This is terrible variable naming
@@ -151,6 +161,9 @@ public class OverKeysGenerator {
         
         verticalFlip = false;
         manualKeyFlip = verticalFlip;
+
+        xSliderValue=0.25;
+        ySliderValue=0.25;
 
         renderPath="C:\\Users\\JLMor\\Desktop\\OPENSCAD_DUMP";
     }
@@ -162,7 +175,6 @@ public class OverKeysGenerator {
         keytopsInSingleKeyFiles = false;
         keytopsInTogether = true;
 
-        keyScale=0.875;
         
         periodWidth = octaveWidth / 12 * periodSteps;
         underKeyWidth = octaveWidth / 12.0 - underKeyGap;
@@ -226,9 +238,10 @@ public class OverKeysGenerator {
                             +"\nB:" +b
                             +"\nC:" +c
                             +"\nD:" +d +"");
-        
-        shiftX = (b + c) / 8;
-        shiftY = (a + d) / 8;
+
+
+        shiftX = ((b + c) / 2)*xSliderValue;
+        shiftY = ((a + d) / 2)*ySliderValue;
         
         holeScaleY = 0.5;// ((a + d) * stalkScaleY + yToleranceGap) / (a + d);
 
@@ -890,6 +903,22 @@ public class OverKeysGenerator {
             }
         }
         return areCoprime;
+    }
+
+    public double getA() {
+        return a;
+    }
+
+    public double getB() {
+        return b;
+    }
+
+    public double getC() {
+        return c;
+    }
+
+    public double getD() {
+        return d;
     }
 }
 

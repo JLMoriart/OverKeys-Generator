@@ -13,9 +13,9 @@ public class OverKeysGenerator {
     Scanner scan = new Scanner(System.in);
     PrintWriter pw, pwKeyTop, pwClamp, pwValues, togetherPrint;
     double metalRoundRadius, octaveWidth, periodWidth, underKeyWidth, blackKeyHeight, blackKeyLength, whiteKeyHeight, whiteKeyLength, whiteKeyLengthPreShortening, edgeRadius = 3, keytopHeight = 10, tolerance = 0.05,//measurements
-            genh, genhPreShortening, overhead, keyTopSide1, keyTopSide2, shiftX, shiftY, slantCutWidth, clampDepth,//derived stuff
+            genh, genhPreShortening, overhead, keyTopSide1, keyTopSide2, shiftX, shiftY, slantCutWidth,//derived stuff
             theta, q, r, a, aPreShortening, b, c, d, dPreShortening, z,//bunch of triangle stuff
-            generator, keyScale, holeScaleX, holeScaleY, stalkScaleX, stalkScaleY, keytopHeightDifference,xToleranceGap,yToleranceGap,hGap,vGap;
+            generator, keyScale, holeScaleX, holeScaleY, stalkScaleX, stalkScaleY, keytopHeightDifference,xToleranceGap,yToleranceGap;
     double metalRoundRadiusTolerance = 0.0125, underKeyGap;
     int periodSteps, generatorSteps, desiredGamut, startingKey, range, genForLargeStep, genForSmallStep, stepsForLarge, stepsForSmall, genForStep1, genForStep1b;
     boolean isKeytop, verticalFlip, neededAbsoluteValue = false, manualKeyFlip, shiftXTrue, roughRender, keytopsInTogether, keytopsInSingleKeyFiles;
@@ -59,8 +59,6 @@ public class OverKeysGenerator {
             metalRoundRadius=values.get("metalRoundRadius");
             xToleranceGap=values.get("stalkFitXTolerance");
             yToleranceGap=values.get("stalkFitYTolerance");
-            //hGap=values.get("keytopXGap");
-            //vGap=values.get("keytopYGap");
             keyScale=values.get("keytopScale");
             underKeyGap=values.get("underkeyGap");
             xSliderValue=values.get("shiftXValue");
@@ -96,8 +94,6 @@ public class OverKeysGenerator {
             metalRoundRadius=doubleValues.get("metalRoundRadius");
             xToleranceGap=doubleValues.get("stalkFitXTolerance");
             yToleranceGap=doubleValues.get("stalkFitYTolerance");
-            //hGap=doubleValues.get("keytopXGap");
-            //vGap=doubleValues.get("keytopYGap");
             keyScale=doubleValues.get("keytopScale");
             underKeyGap=doubleValues.get("underkeyGap");
             xSliderValue=doubleValues.get("shiftXValue");
@@ -140,17 +136,10 @@ public class OverKeysGenerator {
         desiredGamut = 24;//2*periodSteps?
         range = 12;
         startingKey = 5;
-        
-        //these are sort of broken because instead of setting the distance between edges,
-        //it just shrinks the model so that the highest and rightest point are moved these amounts
 
         //Gaps for stalkHole fit
         xToleranceGap = 0.3;
         yToleranceGap = 0.2;
-
-        //for keytop gaps
-        hGap = 3;//2.125;
-        vGap = 0.5;
 
         keyScale=0.875;
 
@@ -169,17 +158,12 @@ public class OverKeysGenerator {
     }
 
     public void getUserInputAndDeriveConstants() {
-        
-        //generatorSteps = Math.max(generatorSteps,periodSteps-generatorSteps);
-        
         keytopsInSingleKeyFiles = false;
         keytopsInTogether = true;
 
-        
         periodWidth = octaveWidth / 12 * periodSteps;
         underKeyWidth = octaveWidth / 12.0 - underKeyGap;
         genhPreShortening = whiteKeyLengthPreShortening / desiredGamut;
-        clampDepth = metalRoundRadius * 8;
         whiteKeyHeight = blackKeyHeight + metalRoundRadius + Math.sqrt(metalRoundRadius * metalRoundRadius * 2) + 4;
 
         determineMOS();
@@ -199,16 +183,14 @@ public class OverKeysGenerator {
         determineGens();//find out what generator values get you to large and small step, as well as 1 step in whole tuning
 
             a = genForSmallStep * genhPreShortening;
-            b = stepsForSmall / (periodSteps * 1.0) * periodWidth;
-            c = stepsForLarge / (periodSteps * 1.0) * periodWidth;
+            b = stepsForSmall / (periodSteps) * periodWidth;
+            c = stepsForLarge / (periodSteps) * periodWidth;
             d = genForLargeStep * genhPreShortening;
 
         /*
-        this is confusing but I think this is how it's working:
-        It calculates a b c and d as if we didn't have to worry about not putting the keytops directly over the pivot point
-        Then, using those values, it makes the white key shorter (by overhead, and 0.25*(a+d) so that not even the top of the highest key is over the pivot point)
-        Now we need to recalculate a b c and d for this new length. We do that, and it just sticks out by the overhead amount
-        lmao who needs functions when you can copy and past the same code over and over
+        -Calculate a b c and d as if we didn't have to worry about not putting the keytops directly over the pivot point
+        -Makes the white key shorter (by overhead, and 0.25*(a+d) so that not even the top of the highest key is over the pivot point)
+        -Recalculate a b c and d for this new length.
         */
 
         whiteKeyLength = whiteKeyLengthPreShortening - (metalRoundRadius * 2 + 4 + (a + d) * 0.25);//dang haha I think the + 4 thing should be a variable. It's... the extra distance for the metal round/rod hole from the edge I think
@@ -240,10 +222,10 @@ public class OverKeysGenerator {
                             +"\nD:" +d +"");
 
 
-        shiftX = ((b + c) / 2)*xSliderValue;
-        shiftY = ((a + d) / 2)*ySliderValue;
+        shiftX = (b + c)/4*xSliderValue;
+        shiftY = (a + d)/4*ySliderValue;
         
-        holeScaleY = 0.5;// ((a + d) * stalkScaleY + yToleranceGap) / (a + d);
+        holeScaleY = 0.5;
 
         if (shiftXTrue) {
             slantCutWidth = b + c - shiftX;
@@ -282,12 +264,8 @@ public class OverKeysGenerator {
         pwValues.close();
 
         for (int i = 0; i < range; i++) {//iterate keys until range is reached.
-            //could check for duplicate files, NOT FOR NOWWWW
             currentPianoKey = (i + startingKey) % 12;//started on starting key, have moved i times, keys 12 steps apart are same underlying note
-            //if((verticalFlip && !neededAbsoluteValue)||(!verticalFlip && neededAbsoluteValue)){
-            //    currentGenerator = (i * genForStep1b) % periodSteps;
-            //} else {
-                currentGenerator = (i * genForStep1) % periodSteps;
+            currentGenerator = (i * genForStep1) % periodSteps;
             
             //modulo periodSteps because they share the same topside of the key and I want to start at the lowest one so that I include it, because I only move upwards later one, I think
             int keytopsNeeded = (desiredGamut - currentGenerator - 1) / periodSteps + 1;//-1 then plus one because if desiredGamut-currentGenerator)=periodSteps, I want it to return 1?
@@ -324,7 +302,7 @@ public class OverKeysGenerator {
             }
         }
         createKeytop();//after crazy for loop for bases, make keytops file ONCE OH YEAH ONCE
-        //createClamp();
+
         togetherPrint.close();
     }
 
@@ -360,7 +338,6 @@ public class OverKeysGenerator {
         pwValues.println("keytopHeight=" + keytopHeight + ";");
         pwValues.println("tolerance=" + tolerance + ";");
         pwValues.println("slantCutWidth=" + slantCutWidth + ";");
-        pwValues.println("clampDepth=" + clampDepth + ";");
         pwValues.println("shiftY =" + shiftY + ";");
         pwValues.println("keytopHeightDifference =" + keytopHeightDifference + ";");
         pwValues.println("blackKeyLength =" + blackKeyLength + ";");
@@ -385,17 +362,6 @@ public class OverKeysGenerator {
             pwValues.println("[(c-shiftX),(a+d),keytopHeight],//11");
             pwValues.println("];");
 
-            pwValues.println("Faces = [");
-            pwValues.println("[0,1,2,3,4,5],");
-            pwValues.println("[1,0,6,7],");
-            pwValues.println("[2,1,7,8],");
-            pwValues.println("[3,2,8,9],");
-            pwValues.println("[4,3,9,10],");
-            pwValues.println("[5,4,10,11],");
-            pwValues.println("[0,5,11,6],");
-            pwValues.println("[11,10,9,8,7,6] ");
-            pwValues.println("];");//faces for polygon in counter clockwise points looking from the inside of the key
-            pwValues.println("");
         } else {
             pwValues.println("");
             pwValues.println("Points = [");//shiftY stretches the side points vertically hexagonal and short
@@ -413,7 +379,7 @@ public class OverKeysGenerator {
             pwValues.println("[(b+c),d+shiftY,keytopHeight],//10");
             pwValues.println("[c,(a+d)-shiftY,keytopHeight],//11");
             pwValues.println("];");
-
+        }
             pwValues.println("Faces = [");
             pwValues.println("[0,1,2,3,4,5],");
             pwValues.println("[1,0,6,7],");
@@ -425,9 +391,6 @@ public class OverKeysGenerator {
             pwValues.println("[11,10,9,8,7,6] ");
             pwValues.println("];");//faces for polygon in counter clockwise points looking from the inside of the key
             pwValues.println("");
-        }
-
-
     }
 
     public void createMainBase(int currentGenerator, int keytopsNeeded, int i, int currentPianoKey) {

@@ -1,75 +1,175 @@
+package overkeys.generator;
 
+import gui.GUIController;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
-import java.io.*;
 
 public class OverKeysGenerator {
 
     Scanner scan = new Scanner(System.in);
     PrintWriter pw, pwKeyTop, pwClamp, pwValues, togetherPrint;
-    double metalRoundRadius, octaveWidth, periodWidth, underKeyWidth, blackKeyHeight, blackKeyLength, whiteKeyHeight, whiteKeyLength, whiteKeyLengthPreShortening, edgeRadius = 3, keytopHeight =10, tolerance=0.05,//measurements 
-            genh, genhPreShortening, overhead, keyTopSide1, keyTopSide2, shiftX,shiftY,slantCutWidth,clampDepth,//derived stuff
+    double metalRoundRadius, octaveWidth, periodWidth, underKeyWidth, blackKeyHeight, blackKeyLength, whiteKeyHeight, whiteKeyLength, whiteKeyLengthPreShortening, edgeRadius = 3, keytopHeight = 10, tolerance = 0.05,//measurements
+            genh, genhPreShortening, overhead, keyTopSide1, keyTopSide2, shiftX, shiftY, slantCutWidth,//derived stuff
             theta, q, r, a, aPreShortening, b, c, d, dPreShortening, z,//bunch of triangle stuff
-            generator, holeScaleX, holeScaleY, stalkScaleX, stalkScaleY, keytopHeightDifference;
-    double metalRoundRadiusTolerance=0.0125, underKeyGap;
+            generator, keyScale, holeScaleX, holeScaleY, stalkScaleX, stalkScaleY, keytopHeightDifference,xToleranceGap,yToleranceGap;
+    double metalRoundRadiusTolerance = 0.0125, underKeyGap;
     int periodSteps, generatorSteps, desiredGamut, startingKey, range, genForLargeStep, genForSmallStep, stepsForLarge, stepsForSmall, genForStep1, genForStep1b;
-    boolean isKeytop, verticalFlip, neededAbsoluteValue=false, shiftXTrue, roughRender, keytopsInTogether, keytopsInSingleKeyFiles;
+    boolean isKeytop, verticalFlip, neededAbsoluteValue = false, manualKeyFlip, shiftXTrue, roughRender, keytopsInTogether, keytopsInSingleKeyFiles;
+    double xSliderValue,ySliderValue;
 
     ArrayList<Integer> mosSizes = new ArrayList<>();
     ArrayList<mosScale> mosTracker = new ArrayList<>();
 
+    String renderPath;
+
+
     public static void main(String[] args) {
         OverKeysGenerator IKG = new OverKeysGenerator();
+
+        if (IKG.setConstantsFromConfig())
+            IKG.setDefaultConstants();
         IKG.getUserInputAndDeriveConstants();
         IKG.generateFiles();
     }
-    
-    public void getUserInputAndDeriveConstants() {
+
+    public void setRenderPath(String renderPath){
+        this.renderPath=renderPath;
+    }
+
+
+    public boolean setConstantsFromConfig() {
+
+        Map<String,Double> values=new HashMap<>();
+        try (Scanner sc = new Scanner(new File("./resources/config.txt"))) {
+            while (sc.hasNextLine()) {
+                String line = sc.nextLine();
+                String[] properties = line.split(GUIController.SEPARATOR, -1);
+                values.put(properties[0],Double.parseDouble(properties[1]));
+            }
+
+            octaveWidth=values.get("octaveWidth");
+            blackKeyHeight=values.get("blackKeyHeight");
+            blackKeyLength=values.get("blackKeyLength");
+            whiteKeyLengthPreShortening=values.get("whiteKeyLength");
+            keytopHeightDifference=values.get("keytopHeightDiff");
+            metalRoundRadius=values.get("metalRoundRadius");
+            xToleranceGap=values.get("stalkFitXTolerance");
+            yToleranceGap=values.get("stalkFitYTolerance");
+            keyScale=values.get("keytopScale");
+            underKeyGap=values.get("underkeyGap");
+            xSliderValue=values.get("shiftXValue");
+            ySliderValue=values.get("shiftYValue");
+
+            periodSteps= (int) Math.round(values.get("halfStepsToPeriod"));
+            generatorSteps=(int) Math.round(values.get("halfStepsToGenerator"));
+            desiredGamut=(int) Math.round(values.get("gamut"));
+            range=(int) Math.round(values.get("range"));
+            startingKey=(int) Math.round(values.get("startingKey"));
+            stepsForLarge=(int) Math.round(values.get("halfStepsToLargeMOSStep"));
+
+            shiftXTrue = (int) Math.round(values.get("shiftXtrue")) == 1;
+            roughRender = (int) Math.round(values.get("roughRender")) == 1;
+            return true;
+
+        } catch (FileNotFoundException | NumberFormatException ex) {
+            //config file does not exist- return false to load default constants
+            System.out.println("preset file does not exist or corrupted. Default constants loaded");
+            return false;
+        }
+
+    }
+
+    public boolean setConstantsFromLists(Map<String, Double> doubleValues, Map<String, Integer> intValues) {
+
+        try{
+            octaveWidth=doubleValues.get("octaveWidth");
+            blackKeyHeight=doubleValues.get("blackKeyHeight");
+            blackKeyLength=doubleValues.get("blackKeyLength");
+            whiteKeyLengthPreShortening=doubleValues.get("whiteKeyLength");
+            keytopHeightDifference=doubleValues.get("keytopHeightDiff");
+            metalRoundRadius=doubleValues.get("metalRoundRadius");
+            xToleranceGap=doubleValues.get("stalkFitXTolerance");
+            yToleranceGap=doubleValues.get("stalkFitYTolerance");
+            keyScale=doubleValues.get("keytopScale");
+            underKeyGap=doubleValues.get("underkeyGap");
+            xSliderValue=doubleValues.get("shiftXValue");
+            ySliderValue=doubleValues.get("shiftYValue");
+
+
+            periodSteps= Math.round(intValues.get("halfStepsToPeriod"));
+            generatorSteps=Math.round(intValues.get("halfStepsToGenerator"));
+            desiredGamut= Math.round(intValues.get("gamut"));
+            range= Math.round(intValues.get("range"));
+            startingKey= Math.round(intValues.get("startingKey"));
+            stepsForLarge= Math.round(intValues.get("halfStepsToLargeMOSStep"));
+
+            shiftXTrue =  Math.round(intValues.get("shiftXtrue")) == 1;
+            roughRender =  Math.round(intValues.get("roughRender")) == 1;
+            verticalFlip =  Math.round(intValues.get("verticalFlip")) == 1;
+            manualKeyFlip = verticalFlip;
+            return true;
+
+        } catch (NumberFormatException ex) {
+
+            return false;
+        }
+
+    }
+
+
+    public void setDefaultConstants(){
         octaveWidth = 164;
         blackKeyHeight = 13;
         blackKeyLength = 100;
         whiteKeyLengthPreShortening = 148;
-        
+
         keytopHeightDifference = 15;
         metalRoundRadius = 2.5;
-        
-        roughRender = false;
-        keytopsInSingleKeyFiles = false;
-        keytopsInTogether = true;
-        
-        verticalFlip = false;//don't think I touch this anymore
-        
-        shiftXTrue = false;//if not, shift Y. This is terrible variable naming
-        
-        periodSteps = 2;
-        generatorSteps = 1;
-        desiredGamut = 6;//2*periodSteps?
+
+        periodSteps = 12;
+        generatorSteps = 5;
+        stepsForLarge = 1;
+        desiredGamut = 24;//2*periodSteps?
         range = 12;
         startingKey = 5;
-        stepsForLarge = 1;
-       
-        //these are sort of broken because instead of setting the distance between edges,
-        //it just shrinks the model so that the highest and rightest point are moved these amounts
-        
+
         //Gaps for stalkHole fit
-        double xToleranceGap=0.3;
-        double yToleranceGap=0.2;
+        xToleranceGap = 0.3;
+        yToleranceGap = 0.2;
+
+        keyScale=0.875;
+
+        underKeyGap = 0.46875;
+
+        shiftXTrue = true;//if not, shift Y. This is terrible variable naming
+        roughRender = false;
         
-        //for keytop gaps
-        double hGap=3;//2.125;
-        double vGap=0.5;
-        
-        underKeyGap= 0.46875;
+        verticalFlip = false;
+        manualKeyFlip = verticalFlip;
+
+        xSliderValue=0.25;
+        ySliderValue=0.25;
+
+        renderPath="C:\\Users\\JLMor\\Desktop\\OPENSCAD_DUMP";
+    }
+
+    public void getUserInputAndDeriveConstants() {
+        keytopsInSingleKeyFiles = false;
+        keytopsInTogether = true;
 
         periodWidth = octaveWidth / 12 * periodSteps;
         underKeyWidth = octaveWidth / 12.0 - underKeyGap;
         genhPreShortening = whiteKeyLengthPreShortening / desiredGamut;
-        clampDepth = metalRoundRadius*8;
-        whiteKeyHeight = blackKeyHeight+metalRoundRadius+Math.sqrt(metalRoundRadius*metalRoundRadius*2)+4;
-        
+        whiteKeyHeight = blackKeyHeight + metalRoundRadius + Math.sqrt(metalRoundRadius * metalRoundRadius * 2) + 4;
+
         determineMOS();
 
-        System.out.println(checkCoprime(periodSteps, generatorSteps));
-        
+        System.out.println("Coprime? " +checkCoprime(periodSteps, generatorSteps));
+
         int chosenMosScaleIndex;
 
         for (int i = 0; i < mosTracker.size(); i++) {
@@ -81,69 +181,68 @@ public class OverKeysGenerator {
         }
 
         determineGens();//find out what generator values get you to large and small step, as well as 1 step in whole tuning
-        
-        if ((!verticalFlip && !neededAbsoluteValue) || (verticalFlip && neededAbsoluteValue)) {
-                d = genForSmallStep * genhPreShortening -vGap;
-                c = stepsForSmall / (periodSteps * 1.0) * periodWidth - hGap;
-                b = stepsForLarge / (periodSteps * 1.0) * periodWidth - hGap;
-                a = genForLargeStep * genhPreShortening -vGap;
-            
-        }else{
-                a = genForSmallStep * genhPreShortening -vGap;
-                b = stepsForSmall / (periodSteps * 1.0) * periodWidth - hGap;
-                c = stepsForLarge / (periodSteps * 1.0) * periodWidth - hGap;
-                d = genForLargeStep * genhPreShortening -vGap;     
-        }
+
+            a = genForSmallStep * genhPreShortening;
+            b = stepsForSmall / (periodSteps) * periodWidth;
+            c = stepsForLarge / (periodSteps) * periodWidth;
+            d = genForLargeStep * genhPreShortening;
 
         /*
-        this is confusing but I think this is how it's working:
-        It calculates a b c and d as if we didn't have to worry about not putting the keytops directly over the pivot point
-        Then, using those values, it makes the white key shorter (by overhead, and 0.25*(a+d) so that not even the top of the highest key is over the pivot point)
-        Now we need to recalculate a b c and d for this new length. We do that, and it just sticks out by the overhead amount
-        lmao who needs functions when you can copy and past the same code over and over
+        -Calculate a b c and d as if we didn't have to worry about not putting the keytops directly over the pivot point
+        -Makes the white key shorter (by overhead, and 0.25*(a+d) so that not even the top of the highest key is over the pivot point)
+        -Recalculate a b c and d for this new length.
         */
-  
-        whiteKeyLength = whiteKeyLengthPreShortening-(metalRoundRadius * 2 + 4 + (a + d) * 0.25);//dang haha I think the + 4 thing should be a variable. It's... the extra distance for the metal round/rod hole from the edge I think
+
+        whiteKeyLength = whiteKeyLengthPreShortening - (metalRoundRadius * 2 + 4 + (a + d) * 0.25);//dang haha I think the + 4 thing should be a variable. It's... the extra distance for the metal round/rod hole from the edge I think
         genh = whiteKeyLength / desiredGamut;
-        
-        if ((!verticalFlip && !neededAbsoluteValue) || (verticalFlip && neededAbsoluteValue)) {
+
+            a = genForSmallStep * genh;
+            b = stepsForSmall / (periodSteps * 1.0) * periodWidth;
+            c = stepsForLarge / (periodSteps * 1.0) * periodWidth;
+            d = genForLargeStep * genh;
             
-                d = genForSmallStep * genh -vGap;
-                c = stepsForSmall / (periodSteps * 1.0) * periodWidth - hGap;
-                b = stepsForLarge / (periodSteps * 1.0) * periodWidth - hGap;
-                a = genForLargeStep * genh -vGap;
+            System.out.println("verticalFlip: " +verticalFlip);
+            System.out.println("neededAbsoluteValue: " +neededAbsoluteValue);
             
-        }else{
-                a = genForSmallStep * genh -vGap;
-                b = stepsForSmall / (periodSteps * 1.0) * periodWidth - hGap;
-                c = stepsForLarge / (periodSteps * 1.0) * periodWidth - hGap;
-                d = genForLargeStep * genh -vGap;     
+            if(manualKeyFlip)
+            {
+                System.out.println("inside vertical flip slash needed absolute value");
+                double tempA, tempB;
+                tempA = a;
+                tempB = b;
+                a=d;
+                b=c;
+                d=tempA;
+                c=tempB;
+            }
+            
+        System.out.println("A:" +a
+                            +"\nB:" +b
+                            +"\nC:" +c
+                            +"\nD:" +d +"");
+
+
+        shiftX = (b + c)/4*xSliderValue;
+        shiftY = (a + d)/4*ySliderValue;
+        
+        holeScaleY = 0.5;
+
+        if (shiftXTrue) {
+            slantCutWidth = b + c - shiftX;
+        } else {
+            slantCutWidth = (b + c) / 2 - underKeyWidth / 6;
         }
+            holeScaleX = 0.5;//Math.min(underKeyWidth / ((b + c)), 0.5 * keyScale);
+            stalkScaleX = holeScaleX;//(holeScaleX*(b+c)-xToleranceGap)/(holeScaleX*(b+c))*holeScaleX;//Math.min(underKeyWidth-xToleranceGap / ((b + c)), ((b+c)*keyScale*holeScaleX-xToleranceGap)/((b+c)*keyScale*holeScaleX)*holeScaleX*keyScale);
+            stalkScaleY = holeScaleY;//(holeScaleY*(a+d-shiftY*2)-yToleranceGap)/(holeScaleY*(a+d-shiftY*2))*holeScaleY;//((a+d - shiftY*2)*keyScale*holeScaleY-yToleranceGap)/((a+d - shiftY*2)*keyScale*holeScaleY)*holeScaleY;
         
-        shiftX = (b+c)/8;
-        shiftY = (a+d)/8;
-        
-        if(shiftXTrue){
-            slantCutWidth = b+c-shiftX;
-            stalkScaleX = Math.min(underKeyWidth / (b + c - shiftX*2),0.5);
-        }
-        else{
-            slantCutWidth = (b+c)/2-underKeyWidth/6;
-            stalkScaleX = Math.min(underKeyWidth / (b + c),0.5);
-        }
-        
-        stalkScaleY = 0.5;
-        
-        holeScaleX = ((b + c) * stalkScaleX + xToleranceGap) / (b + c);
-        holeScaleY = ((a + d) * stalkScaleY + yToleranceGap) / (a + d);
-        
-        overhead = metalRoundRadius * 2 + 4 + (a + d) * 0.25;
+        overhead = metalRoundRadius * 2 + 4 + (a + d) * 0.33;
     }
 
     public void generateFiles() {
         int currentPianoKey, currentGenerator;
 
-        File together = new File("C:\\Users\\JLMor\\Desktop\\OPENSCAD_DUMP\\together.scad");//together is the big collection of keys and keytops that will show if everything worked correctly
+        File together = new File(this.renderPath+"\\together.scad");//together is the big collection of keys and keytops that will show if everything worked correctly
         together.getParentFile().mkdirs();
         try {
             togetherPrint = new PrintWriter(together, "UTF-8");
@@ -151,10 +250,9 @@ public class OverKeysGenerator {
             System.out.println(e);
         }
         togetherPrint.println("include<values.scad>;");
-        
-        
 
-        File values = new File("C:\\Users\\JLMor\\Desktop\\OPENSCAD_DUMP\\values.scad");
+
+        File values = new File(this.renderPath+"\\values.scad");
         values.getParentFile().mkdirs();
         try {
             pwValues = new PrintWriter(values, "UTF-8");
@@ -166,18 +264,14 @@ public class OverKeysGenerator {
         pwValues.close();
 
         for (int i = 0; i < range; i++) {//iterate keys until range is reached.
-            //could check for duplicate files, NOT FOR NOWWWW
             currentPianoKey = (i + startingKey) % 12;//started on starting key, have moved i times, keys 12 steps apart are same underlying note
-            if (verticalFlip) {
-                currentGenerator = (i * genForStep1b) % periodSteps;
-            } else {
-                currentGenerator = (i * genForStep1) % periodSteps;
-            }
+            currentGenerator = (i * genForStep1) % periodSteps;
+            
             //modulo periodSteps because they share the same topside of the key and I want to start at the lowest one so that I include it, because I only move upwards later one, I think
-            int keytopsNeeded = (desiredGamut - currentGenerator - 1) / periodSteps + 1;//-1 then plus one because if desiredGamut-currentGenerator)=periodSteps, I want it to return 1? 
+            int keytopsNeeded = (desiredGamut - currentGenerator - 1) / periodSteps + 1;//-1 then plus one because if desiredGamut-currentGenerator)=periodSteps, I want it to return 1?
 
             try {
-                File file2 = new File("C:\\Users\\JLMor\\Desktop\\OPENSCAD_DUMP\\" + i + "_" + currentGenerator + ".scad");
+                File file2 = new File(this.renderPath+"\\" + i + "_" + currentGenerator+ ".scad");
                 file2.getParentFile().mkdirs();
                 pw = new PrintWriter(file2, "UTF-8");
 
@@ -187,37 +281,36 @@ public class OverKeysGenerator {
 
                 togetherPrint.println("])");
 
-                togetherPrint.println(i + "_" + currentGenerator + "("+keytopsInTogether+");");
+                togetherPrint.println(i + "_" + currentGenerator + "(" + keytopsInTogether+ ");");
 
                 pw.println("use<keytop.scad>");
                 pw.println("include<values.scad>");
                 pw.println(i + "_" + currentGenerator + "();");
-                pw.println("module " + i + "_" + currentGenerator + "(keytops="+keytopsInSingleKeyFiles+"){");
+                pw.println("module " + i + "_" + currentGenerator + "(keytops=" + keytopsInSingleKeyFiles + "){");
 
                 createMainBase(currentGenerator, keytopsNeeded, i, currentPianoKey);
                 createKeyStalks(currentGenerator, keytopsNeeded, currentPianoKey);
                 pw.println("}");
 
                 thinCuts(currentGenerator);
-                
+
                 pw.println("}\n}");
-                
+
                 pw.close();
             } catch (IOException e) {
                 System.out.println(e);
             }
         }
         createKeytop();//after crazy for loop for bases, make keytops file ONCE OH YEAH ONCE
-        //createClamp();
+
         togetherPrint.close();
     }
-    
+
     public void createValuesFile() {
-        if(roughRender){
+        if (roughRender) {
             pwValues.println("$fs=2;");
             pwValues.println("$fa=20;");
-        }else
-        {
+        } else {
             pwValues.println("$fs=0.3675;");
             pwValues.println("$fa=5;");
         }
@@ -225,8 +318,8 @@ public class OverKeysGenerator {
         pwValues.println("edgeRadius=" + edgeRadius + ";");
         pwValues.println("underKeyWidth=" + underKeyWidth + ";");
         pwValues.println("blackKeyHeight=" + blackKeyHeight + ";");
-        pwValues.println("whiteKeyHeight=" + (blackKeyHeight+metalRoundRadius+Math.sqrt(metalRoundRadius*metalRoundRadius*2)+4) + ";");
-        System.out.println("whiteKeyHeight: "+whiteKeyHeight +";");
+        pwValues.println("whiteKeyHeight=" + (blackKeyHeight + metalRoundRadius + Math.sqrt(metalRoundRadius * metalRoundRadius * 2) + 4) + ";");
+        System.out.println("whiteKeyHeight: " + whiteKeyHeight + ";");
         pwValues.println("genh=" + genh + ";");
         pwValues.println("a=" + a + ";");
         pwValues.println("b=" + b + ";");
@@ -239,20 +332,19 @@ public class OverKeysGenerator {
         pwValues.println("holeScaleY=" + holeScaleY + ";");
         pwValues.println("stalkScaleX=" + stalkScaleX + ";");
         pwValues.println("stalkScaleY=" + stalkScaleY + ";");
+        pwValues.println("keyScale=" + keyScale + ";");
         pwValues.println("metalRoundRadius=" + metalRoundRadius + ";");
         pwValues.println("metalRoundRadiusTolerance=" + metalRoundRadiusTolerance + ";");
         pwValues.println("keytopHeight=" + keytopHeight + ";");
         pwValues.println("tolerance=" + tolerance + ";");
         pwValues.println("slantCutWidth=" + slantCutWidth + ";");
-        pwValues.println("clampDepth=" + clampDepth + ";");
         pwValues.println("shiftY =" + shiftY + ";");
         pwValues.println("keytopHeightDifference =" + keytopHeightDifference + ";");
         pwValues.println("blackKeyLength =" + blackKeyLength + ";");
         pwValues.println("whiteKeyLengthPreShortening =" + whiteKeyLengthPreShortening + ";");
-        
-        
-        if(shiftXTrue)
-        {
+
+
+        if (shiftXTrue) {
             pwValues.println("");
             pwValues.println("Points = [");//shiftX widens the tips and squishes the middle to make it hexagonal and tall
             pwValues.println("[shiftX,a,0],//0");
@@ -269,21 +361,8 @@ public class OverKeysGenerator {
             pwValues.println("[(c+shiftX),(a+d),keytopHeight],//10");
             pwValues.println("[(c-shiftX),(a+d),keytopHeight],//11");
             pwValues.println("];");
-            
-            pwValues.println("Faces = [");
-            pwValues.println("[0,1,2,3,4,5],");
-            pwValues.println("[1,0,6,7],");
-            pwValues.println("[2,1,7,8],");
-            pwValues.println("[3,2,8,9],");
-            pwValues.println("[4,3,9,10],");
-            pwValues.println("[5,4,10,11],");
-            pwValues.println("[0,5,11,6],");
-            pwValues.println("[11,10,9,8,7,6] ");
-            pwValues.println("];");//faces for polygon in counter clockwise points looking from the inside of the key
-            pwValues.println("");
-        }
-        else
-        {
+
+        } else {
             pwValues.println("");
             pwValues.println("Points = [");//shiftY stretches the side points vertically hexagonal and short
             pwValues.println("[0,a+shiftY,0],//0");
@@ -292,7 +371,7 @@ public class OverKeysGenerator {
             pwValues.println("[(b+c),d-shiftY,0],//3");
             pwValues.println("[(b+c),d+shiftY,0],//4");
             pwValues.println("[c,(a+d)-shiftY,0],//5");
-            
+
             pwValues.println("[0,a+shiftY,keytopHeight],//6");
             pwValues.println("[0,a-shiftY,keytopHeight],//7");
             pwValues.println("[b,shiftY,keytopHeight],//8");
@@ -300,7 +379,7 @@ public class OverKeysGenerator {
             pwValues.println("[(b+c),d+shiftY,keytopHeight],//10");
             pwValues.println("[c,(a+d)-shiftY,keytopHeight],//11");
             pwValues.println("];");
-            
+        }
             pwValues.println("Faces = [");
             pwValues.println("[0,1,2,3,4,5],");
             pwValues.println("[1,0,6,7],");
@@ -312,16 +391,17 @@ public class OverKeysGenerator {
             pwValues.println("[11,10,9,8,7,6] ");
             pwValues.println("];");//faces for polygon in counter clockwise points looking from the inside of the key
             pwValues.println("");
-        }
-        
-
     }
-        
+
     public void createMainBase(int currentGenerator, int keytopsNeeded, int i, int currentPianoKey) {
         double length;//length of main base
+        if(verticalFlip)
+        length = genh * (periodSteps - currentGenerator + (keytopsNeeded - 1) * periodSteps) + overhead + stalkScaleY * (a + d);
+        else
         length = genh * (currentGenerator + (keytopsNeeded - 1) * periodSteps) + overhead + stalkScaleY * (a + d);
+        
         System.out.println("length: " +length);
-        pw.println("length=" + length + ";");
+        pw.println("length=" + length +";");
         pw.println("difference(){"
                 + "\nunion(){");
         pw.println("");
@@ -342,13 +422,13 @@ public class OverKeysGenerator {
         }
 
         pw.println("translate([0,metalRoundRadius*2+4,0])");
-        
+
         if (isWhiteKey(currentPianoKey)) {//main section, white key is taller
             pw.println("cube([underKeyWidth,length-(metalRoundRadius*2+4),whiteKeyHeight],false);");
         } else {
             pw.println("cube([underKeyWidth,length-(metalRoundRadius*2+4),metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4],false);");
         }
-        
+
         pw.println("translate([0.5*underKeyWidth,length,0])");
         if (isWhiteKey(currentPianoKey)) {//rounded tip
             pw.println("cylinder(h=whiteKeyHeight, r=underKeyWidth/6);");
@@ -369,30 +449,30 @@ public class OverKeysGenerator {
                     + "cylinder(r=blackKeyHeight*2, h=underKeyWidth);\n"
                     + "}\n");
         }
-        
+
         pw.println("difference(){\n"
                 + "translate([-tolerance,-tolerance,-tolerance])\n");
-        if(!isWhiteKey(currentPianoKey)){
+        if (!isWhiteKey(currentPianoKey)) {
             pw.println("cube([underKeyWidth+tolerance*2,underKeyWidth/6, whiteKeyHeight-blackKeyHeight+tolerance*2]);\n"
-                + "translate([underKeyWidth/6,underKeyWidth/6,0])\n"
-                + "cylinder(r=underKeyWidth/6, h=whiteKeyHeight-blackKeyHeight+3*tolerance);\n"
-                + "translate([underKeyWidth-underKeyWidth/6,underKeyWidth/6,0])\n"
-                + "cylinder(r=underKeyWidth/6, h=whiteKeyHeight-blackKeyHeight);\n"
-                + "translate([underKeyWidth/6,-tolerance,-tolerance])\n"
-                + "cube([underKeyWidth*2/3, underKeyWidth/6+tolerance, whiteKeyHeight-blackKeyHeight+tolerance]);\n");
+                    + "translate([underKeyWidth/6,underKeyWidth/6,0])\n"
+                    + "cylinder(r=underKeyWidth/6, h=whiteKeyHeight-blackKeyHeight+3*tolerance);\n"
+                    + "translate([underKeyWidth-underKeyWidth/6,underKeyWidth/6,0])\n"
+                    + "cylinder(r=underKeyWidth/6, h=whiteKeyHeight-blackKeyHeight);\n"
+                    + "translate([underKeyWidth/6,-tolerance,-tolerance])\n"
+                    + "cube([underKeyWidth*2/3, underKeyWidth/6+tolerance, whiteKeyHeight-blackKeyHeight+tolerance]);\n");
 
         } else {
             pw.println("cube([underKeyWidth+tolerance*2,underKeyWidth/6, whiteKeyHeight+tolerance*2]);\n"
-                + "translate([underKeyWidth/6,underKeyWidth/6,0])\n"
-                + "cylinder(r=underKeyWidth/6, h=whiteKeyHeight+3*tolerance);\n"
-                + "translate([underKeyWidth*5/6,underKeyWidth/6,0])\n"
-                + "cylinder(r=underKeyWidth/6, h=whiteKeyHeight+3*tolerance);\n"
-                + "translate([underKeyWidth/6,-tolerance,-tolerance])\n"
-                + "cube([underKeyWidth*2/3, underKeyWidth/6+tolerance, whiteKeyHeight+tolerance]);\n");
+                    + "translate([underKeyWidth/6,underKeyWidth/6,0])\n"
+                    + "cylinder(r=underKeyWidth/6, h=whiteKeyHeight+3*tolerance);\n"
+                    + "translate([underKeyWidth*5/6,underKeyWidth/6,0])\n"
+                    + "cylinder(r=underKeyWidth/6, h=whiteKeyHeight+3*tolerance);\n"
+                    + "translate([underKeyWidth/6,-tolerance,-tolerance])\n"
+                    + "cube([underKeyWidth*2/3, underKeyWidth/6+tolerance, whiteKeyHeight+tolerance]);\n");
         }
-        
+
         pw.println("}\n");
-        
+
         if (isWhiteKey(currentPianoKey)) {
             pw.println("translate([-.1,metalRoundRadius+2,blackKeyHeight+metalRoundRadius+2])");
         } else {
@@ -411,13 +491,13 @@ public class OverKeysGenerator {
         } else {
             pw.println("translate([underKeyWidth/10,-tolerance,0.125*(metalRoundRadius*2+8)])");//+8 because of 4 around hole I think I dunno who cares
         }
-        
+
         pw.println("mirror([0,1,0])");//key number label
         pw.println("rotate([90,0,0])");
         pw.println("linear_extrude(height=0.5){");
         pw.println("text(\"" + i + "\",size=underKeyWidth/2);");//(metalRoundRadius*2+4)*0.75)//PROBALBY WANT TO FIGURE OUT HOW TO CENTER TEXT VERTICALLY AND HORIZONTALLY
         pw.println("}");
-        
+
         if (isWhiteKey(currentPianoKey)) {
             pw.println("translate([-0.5,0,-0.1])"
                     + "rotate([90,0,90])"
@@ -428,7 +508,7 @@ public class OverKeysGenerator {
                     + "\n[length+underKeyWidth*1/6, whiteKeyHeight*0.5]"
                     + "\n]);"
                     + "\n}");
-        }else{
+        } else {
             pw.println("translate([-0.5,0,-0.1])"
                     + "rotate([90,0,90])"
                     + "linear_extrude(height=underKeyWidth+1){"
@@ -439,29 +519,30 @@ public class OverKeysGenerator {
                     + "\n]);"
                     + "\n}");
         }
-        
+
         pw.println("//Warp Cuts:");
-        
+
         if (isWhiteKey(currentPianoKey)) {
-            pw.println("warpHeight=" + whiteKeyHeight +";");
+            pw.println("warpHeight=" + whiteKeyHeight + ";");
             warpCuts(whiteKeyHeight, length, whiteKeyLengthPreShortening, true);
         } else {
-            pw.println("warpHeight=" + (whiteKeyHeight-blackKeyHeight) +";");
-            warpCuts(whiteKeyHeight-blackKeyHeight, length, blackKeyLength, false);
+            pw.println("warpHeight=" + (whiteKeyHeight - blackKeyHeight) + ";");
+            warpCuts(whiteKeyHeight - blackKeyHeight, length, blackKeyLength, false);
         }
-        
+
         pw.println("}");
-        
+
     }
+
     //chekc white or black key, stop after under length
     public void warpCuts(double warpHeight, double underlyingLength, double length, boolean whiteKey) {
-        for (double soFar = metalRoundRadius*2+4; soFar < length - 0.25*warpHeight && soFar < underlyingLength - 0.25*warpHeight; soFar += warpHeight) {
+        for (double soFar = metalRoundRadius * 2 + 4; soFar < length - 0.5 * warpHeight && soFar < underlyingLength - 0.5 * warpHeight; soFar += warpHeight) {
             pw.println("translate([0,0.25*warpHeight,0])");
             pw.println("translate([-1," + soFar + "," + "warpHeight*0.5])");
             pw.println("rotate([0,90,0])");
             pw.println("linear_extrude(height=underKeyWidth+2)");
             pw.println("polygon(points=[[0,0],[0.25*warpHeight,0.125*warpHeight],[0.25*warpHeight,-0.125*warpHeight]]);");
-            if(soFar < length - 1.25*warpHeight && soFar < underlyingLength - 0.76*warpHeight){
+            if (soFar < length - 1.25 * warpHeight && soFar < underlyingLength - 0.76 * warpHeight) {
                 pw.println("translate([0,0.25*warpHeight,0])");
                 pw.println("translate([-1," + soFar + "+warpHeight*0.5," + "0.75*warpHeight])");
                 pw.println("rotate([0,90,0])");
@@ -470,7 +551,7 @@ public class OverKeysGenerator {
             }
         }
     }
-    
+
     public void thinCuts(int currentGenerator) {
         pw.println("//Thin Cuts:");
         pw.println("translate([0,0,-tolerance]){");
@@ -506,29 +587,41 @@ public class OverKeysGenerator {
 
     }
 
-    public void createKeyStalks(int currentGeneratorIn, int keytopsNeeded, int currentPianoKeyIn) {
+    public void createKeyStalks(int currentGeneratorIn, int keytopsNeeded, int currentPianoKeyIn) {//in order for flipping to work, I need to change where the keytops/keystalks are rendered, front to back
         pw.println("//Key Stalks:");
         for (int j = 0; j < keytopsNeeded; j++) {//j changes generator to enharmonically eqauivalent values by being increasing by periodSteps until greater than gamut
-            if (isWhiteKey(currentPianoKeyIn)) {
-                pw.println("translate([underKeyWidth/2-(b+c)*stalkScaleX/2,genh*" + currentGeneratorIn + "+overhead,0.75*(whiteKeyHeight)]){");
-            } else {
-                pw.println("translate([underKeyWidth/2-(b+c)*stalkScaleX/2,genh*" + currentGeneratorIn + "+overhead,blackKeyHeight+0.75*(metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4)]){");
+            
+            if(verticalFlip){
+                if (isWhiteKey(currentPianoKeyIn)) {
+                    pw.println("translate([underKeyWidth/3,genh*" + (desiredGamut - currentGeneratorIn) + "+overhead,0.75*(whiteKeyHeight)]){");
+                } else {
+                    pw.println("translate([underKeyWidth/3,genh*" + (desiredGamut - currentGeneratorIn) + "+overhead,blackKeyHeight+0.75*(metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4)]){");
+                }
             }
+            else{
+                if (isWhiteKey(currentPianoKeyIn)) {
+                    pw.println("translate([underKeyWidth/3,genh*" + currentGeneratorIn + "+overhead,0.75*(whiteKeyHeight)]){");
+                } else {
+                    pw.println("translate([underKeyWidth/3,genh*" + currentGeneratorIn + "+overhead,blackKeyHeight+0.75*(metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4)]){");
+            }
+            }
+            
+            
             if (isWhiteKey(currentPianoKeyIn)) {
-                pw.println("linear_extrude(height=(keytopHeight+keytopHeightDifference-(" + ((double) (currentGeneratorIn+1.0) / (double) desiredGamut) * keytopHeightDifference + ")+0.25*(whiteKeyHeight))){");//*0.75 to leave 0.25 extra to be taken up by support angle things
+                pw.println("linear_extrude(height=(keytopHeight+keytopHeightDifference-(" + ((double) (currentGeneratorIn + 1.0) / (double) desiredGamut) * keytopHeightDifference + ")+0.25*(whiteKeyHeight))){");//*0.75 to leave 0.25 extra to be taken up by support angle things
             } else {
-                pw.println("linear_extrude(height=(keytopHeight+keytopHeightDifference-(" + ((double) (currentGeneratorIn+1.0) / (double) desiredGamut) * keytopHeightDifference + ")+0.25*(metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4))){");
+                pw.println("linear_extrude(height=(keytopHeight+keytopHeightDifference-(" + ((double) (currentGeneratorIn + 1.0) / (double) desiredGamut) * keytopHeightDifference + ")+0.25*(metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4))){");
             }
 
-            pw.println("scale([stalkScaleX,stalkScaleY])");
+            //pw.println("scale([stalkScaleX,stalkScaleY])");
             pw.println("polygon(points=[");
-            pw.println("[Points[0][0],Points[0][1]],[Points[1][0],Points[1][1]],[Points[2][0],Points[2][1]],[Points[3][0],Points[3][1]],[Points[4][0],Points[4][1]],[Points[5][0],Points[5][1]],[Points[6][0],Points[6][1]]");
+            pw.println("[0,0],[underKeyWidth/3,0],[underKeyWidth/3,(a+d)/2],[0,(a+d)/2]");
             pw.println("]);");
             pw.println("}");
 
             pw.println("if(keytops)");
             pw.println("translate([-0.25*(b+c),(-0.25*(a+d)),60-" + ((double) currentGeneratorIn / (double) desiredGamut) * keytopHeightDifference);
-            if(!isWhiteKey(currentPianoKeyIn)){
+            if (!isWhiteKey(currentPianoKeyIn)) {
                 pw.println("-((blackKeyHeight+0.75*(metalRoundRadius+sqrt(metalRoundRadius*metalRoundRadius*2)+4))-0.75*(whiteKeyHeight))");//if black key, drop down by the difference bewteen the different stalks' starting heights
             }
             pw.println("])");//
@@ -540,11 +633,12 @@ public class OverKeysGenerator {
 
     public void createKeytop() {
         try {
-            File file = new File("C:\\Users\\JLMor\\Desktop\\OPENSCAD_DUMP\\keytop.scad");
+            File file = new File(renderPath+"\\keytop.scad");
             file.getParentFile().mkdirs();
             pwKeyTop = new PrintWriter(file, "UTF-8");
 
             pwKeyTop.println("include<values.scad>;");
+            
             pwKeyTop.println("keytop();");
             pwKeyTop.println("");
 
@@ -553,62 +647,62 @@ public class OverKeysGenerator {
             pwKeyTop.println("}");//
 
             pwKeyTop.println("module keytop(){");//make it a module so that together.scad can use it
+            pwKeyTop.println("scale([keyScale,keyScale,1]){");
             pwKeyTop.println("difference(){");
             pwKeyTop.println("keytopShape();");//make key
-
-            pwKeyTop.println("translate([1/2*(b+c)-(1/2*(b+c)*holeScaleX),1/2*(d+a)-(1/2*(d+a)*holeScaleY),-0.1])");
-            pwKeyTop.println("scale([holeScaleX,holeScaleY,0.5])");
-            pwKeyTop.println("keytopShape();");
+            
+            
+            pwKeyTop.println("translate([1/2*(b+c)-1/6*underKeyWidth,1/2*(d+a)-(1/2*(d+a)*holeScaleY),-0.01])");
+            //pwKeyTop.println("scale([holeScaleX,holeScaleY,0.5])");
+            pwKeyTop.println("linear_extrude(height = 0.5*keytopHeight)");
+            pwKeyTop.println("polygon(points=[");
+            pwKeyTop.println("[0,0],[underKeyWidth/3-"+xToleranceGap+",0],[underKeyWidth/3-"+xToleranceGap+",(a+d)/2-"+yToleranceGap+"],[0,(a+d)/2-"+yToleranceGap+"]");
+            pwKeyTop.println("]);");
+            //pwKeyTop.println("keytopShape();");
             
             //edges rounded by subtracting module below
-            if(shiftXTrue)
-            {
+            if (shiftXTrue) {
                 pwKeyTop.print("edge(11,6,1,");
-                if(Math.atan(d/c)>0) pwKeyTop.print("-");
-                pwKeyTop.println("1);");
+                pwKeyTop.println("-1);");
 
-                pwKeyTop.print("edge(7,6,1,");
-                if(Math.atan(-a/(b-2*shiftX))>0) pwKeyTop.print("-");
+                pwKeyTop.print("edge(6,7,1,");
+                if (b<2*shiftX || c<2*shiftX) pwKeyTop.print("-");
                 pwKeyTop.println("1);");
 
                 pwKeyTop.print("edge(7,8,1,");
                 pwKeyTop.println("1);");
 
                 pwKeyTop.print("edge(8,9,1,");
-                if(Math.atan(d/c)<0) pwKeyTop.print("-");
                 pwKeyTop.println("1);");
 
                 pwKeyTop.print("edge(9,10,1,");
-                if(Math.atan(-a/(b-2*shiftX))<0) pwKeyTop.print("-");
-                pwKeyTop.println("1);");
+                if (b<2*shiftX || c<2*shiftX) pwKeyTop.print("-");
+                pwKeyTop.println("-1);");
 
                 pwKeyTop.print("edge(10,11,1,");
                 pwKeyTop.println("-1);");
-            }
-            else
-            {
+            } else {
                 pwKeyTop.print("edge(11,6,1,");
-                if(Math.atan(d/c)>0) pwKeyTop.print("-");
-                pwKeyTop.println("1);");
-
-                pwKeyTop.print("edge(7,6,1,");
                 pwKeyTop.println("-1);");
+
+                pwKeyTop.print("edge(6,7,1,");
+                pwKeyTop.println("1);");
 
                 pwKeyTop.print("edge(7,8,1,");
                 pwKeyTop.println("1);");
 
                 pwKeyTop.print("edge(8,9,1,");
-                if(Math.atan(d/c)<0) pwKeyTop.print("-");
                 pwKeyTop.println("1);");
 
                 pwKeyTop.print("edge(9,10,1,");
                 pwKeyTop.println("1);");
 
                 pwKeyTop.print("edge(10,11,1,");
+                if (a<2*shiftY || d<2*shiftY) pwKeyTop.print("-");
                 pwKeyTop.println("-1);");
             }
-            
-            
+
+            pwKeyTop.println("}");
             pwKeyTop.println("}");
 
             pwKeyTop.println("module edge (point1,point2,d1,d2){");//annoying combination of cylinders and cubes to round edges
@@ -617,7 +711,7 @@ public class OverKeysGenerator {
             pwKeyTop.println("rotate([0,90,atan((Points[point2][1]-Points[point1][1])/(Points[point2][0]-Points[point1][0]))])");
             pwKeyTop.println("rotate([0,0,45])");
             pwKeyTop.println("cube([pow(2*(edgeRadius*edgeRadius),1/2),pow(2*(edgeRadius*edgeRadius),1/2),pow(pow(Points[point1][0]-Points[point2][0],2)+pow(Points[point1][1]-Points[point2][1],2),0.5)*2],true);");
-            
+
             pwKeyTop.println("translate([(Points[point1][0]+Points[point2][0])/2,(Points[point1][1]+Points[point2][1])/2,(Points[point1][2]+Points[point2][2])/2])");
             pwKeyTop.println("rotate([0,90,atan((Points[point2][1]-Points[point1][1])/(Points[point2][0]-Points[point1][0]))])");
             pwKeyTop.println("translate([d1*edgeRadius,d2*edgeRadius,0])");
@@ -660,12 +754,12 @@ public class OverKeysGenerator {
             stepSizes = new StepSizeTracker();
             scaleSteps.add((currentGenerator * generatorSteps) % periodSteps);
             Collections.sort(scaleSteps);
-            HashMap<Integer, Integer> tempStepHash;
+            //HashMap<Integer, Integer> tempStepHash;
 
             for (int h = 1; h < scaleSteps.size() - numberLess; h++) {//need to keep track of h in stepSizes to check for how many times it shows up
-                tempStepHash = new HashMap<>();
+                //tempStepHash = new HashMap<>();
                 for (int i = h; i < scaleSteps.size() + h - numberLess; i++) {//works so far first time through where h=1 and size is 3
-                    if (i > scaleSteps.size() - 1) {  
+                    if (i > scaleSteps.size() - 1) {
                         stepSizes.addStep(h, scaleSteps.get(i - (scaleSteps.size() - 1)) + periodSteps - scaleSteps.get(i - h));
                     } else {
                         stepSizes.addStep(h, scaleSteps.get(i) - scaleSteps.get(i - h));
@@ -712,11 +806,11 @@ public class OverKeysGenerator {
 
     public void determineGens() {//iterate through stacked generators until you arrive at large step, use to derive small step
 
-        boolean foundLargeGen = false, foundSmallGen = false, foundGenForStep1 = false;
+        boolean foundLargeGen = false, foundSmallGen = false, foundGenForStep1 = false;//maybe it's the foundGenForStep1 that I fucked shit up to work around
         int currentStepsAboveTonic = generatorSteps;//starting at one generator, so starting at the number of generator steps in the tuning
         int generatorCounter = 1;
-        
-        while ((foundLargeGen && foundSmallGen && foundGenForStep1) == false /*&& i<periodSteps*/) {
+
+        while ((foundLargeGen && foundSmallGen && foundGenForStep1) == false) {
 
             while (currentStepsAboveTonic > periodSteps - 1) {
                 currentStepsAboveTonic -= periodSteps;
@@ -724,10 +818,13 @@ public class OverKeysGenerator {
 
             if (currentStepsAboveTonic == stepsForLarge) {
                 foundLargeGen = true;
-                genForLargeStep = Math.min(generatorCounter, Math.abs(periodSteps - generatorCounter));
-                if(generatorCounter > Math.abs(periodSteps - generatorCounter)){
-                    neededAbsoluteValue=true;///////////////////////////////////////////////////////////////////////////////////////////////////////////
+                genForLargeStep = Math.min(generatorCounter, Math.abs(periodSteps - generatorCounter));//if you went up more than half, the other generator is faster there... going up. I think.
+                
+                if((generatorCounter)>Math.abs(periodSteps - generatorCounter)){
+                    neededAbsoluteValue=true;//should change the variable name to "used alternate generator" or something
+                    System.out.println("inside first neededAbsoluteValue");
                 }
+                //And I'm just counting numbers of generators away? which is weird.
             }
 
             if (currentStepsAboveTonic == stepsForSmall) {
@@ -751,13 +848,14 @@ public class OverKeysGenerator {
         }
         if (stepsForLarge == 1) {
             genForLargeStep = Math.abs(genForSmallStep - periodSteps);
-            neededAbsoluteValue=true;
+            neededAbsoluteValue = false;//!neededAbsoluteValue;//////////////////////////////////////////////////////////////////////////////////////////////woah why am I touching this here? just to flip the result? eek, apparently that's about right maybe
+            System.out.println("inside stepsForLarge==1, neededAbsoluteValue");
         }
     }
 
     public boolean checkCoprime(int per, int gen) {//make sure user input of generator generates entire gamut of periodSteps
         int current = gen;
-        boolean areCoprime = true;
+        boolean areCoprime = true;//
         for (int i = 0; i < per - 1; i++) {
             if (current == per) {
                 areCoprime = false;
@@ -769,6 +867,22 @@ public class OverKeysGenerator {
         }
         return areCoprime;
     }
+
+    public double getA() {
+        return a;
+    }
+
+    public double getB() {
+        return b;
+    }
+
+    public double getC() {
+        return c;
+    }
+
+    public double getD() {
+        return d;
+    }
 }
 
 class mosScale {
@@ -777,7 +891,7 @@ class mosScale {
     int smallSize;
     int largeSteps;
     int largeSize;
-    
+
     public mosScale(int scaleSizeIn, int size1In, int steps1In, int size2In, int steps2In) {
         scaleSize = scaleSizeIn;
         if (size1In < size2In) {
@@ -793,7 +907,7 @@ class mosScale {
         }
     }
 
-    public mosScale(int scaleSizeIn, int smallSizeIn, int smallStepsIn) {
+    public mosScale(int scaleSizeIn, int smallSizeIn, int smallStepsIn) {//I might have made this one for when there is only one step size? It might be getting me into/out of trouble, I don't remember
         scaleSize = scaleSizeIn;
         smallSteps = smallStepsIn;
         smallSize = smallSizeIn;
